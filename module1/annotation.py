@@ -35,8 +35,7 @@ def get_annotation(policy_id, question_id):
     model_name = 'deepset/bert-base-cased-squad2'
 
     global q_cache
-    global annotation_progress
-    # q_objs = None
+    # global annotation_progress
 
     if policy_id not in q_cache.keys():
         with open('./module1/static/questions.json', encoding="utf8") as f:
@@ -77,8 +76,8 @@ def get_annotation(policy_id, question_id):
                     has_answer = True
 
                 if has_answer:
-                    a = annotation_progress[policy_id]
-                    a[q["id"]] = True
+                    # a = annotation_progress[policy_id]
+                    # a[q["id"]] = True
                     for i in range(0, len(q["AI_QA_result"])):
                         q["options"][i]["cos"] = q["AI_QA_result"][i]
                     for option in q["options"]:
@@ -96,7 +95,7 @@ def get_annotation(policy_id, question_id):
                             option["type"] = 1
                             break
                 else:
-                    annotation_progress[policy_id][q["id"]] = False
+                    # annotation_progress[policy_id][q["id"]] = False
                     for i in range(0, len(q["AI_QA_result"])):
                         # q["options"][i]["cos"] = round(q["AI_QA_result"][i])
                         q["options"][i]["cos"] = q["AI_QA_result"][i]
@@ -112,18 +111,18 @@ def get_annotation(policy_id, question_id):
             elif q["taskType"] == 2:
                 if obj_property is None or obj_property == "":
                     q["answers"] = multi_QA(q["question"], context, model_name)
-                    annotation_progress[policy_id][q["id"]] = False
+                    # annotation_progress[policy_id][q["id"]] = False
                 else:
                     q["answers"] = obj_property
                     has_answer = True
-                    annotation_progress[policy_id][q["id"]] = True
+                    # annotation_progress[policy_id][q["id"]] = True
                 q["has_answer"] = has_answer
             qqqqq.append(q)
             break
 
     summary_list = get_policy_obj(policy.description)
     graph_list = get_policy_obj(policy.original_text)
-    a, b = get_annotation_progress(policy_id)
+    a, b = get_annotation_progress(policy_id, q_objs)
     return render_template('annotation.html',
                            policy=policy,
                            questions=qqqqq,
@@ -515,8 +514,21 @@ def backToPolicy():
     return render_template('policy_list.html', policy_list=policy_list)
 
 
-def get_annotation_progress(pid):
+def get_annotation_progress(pid, q_objs):
     global annotation_progress
+
+    policy = CoronaNet.query.filter_by(policy_id=pid).first()
+    for q in q_objs:
+        obj_property = getattr(policy, q["columnName"])
+
+        if q["taskType"] == 1:
+            if obj_property is not None or obj_property != "":
+                annotation_progress[pid][q["id"]] = False
+        elif q["taskType"] == 2:
+            if obj_property is None or obj_property == "":
+                annotation_progress[pid][q["id"]] = False
+            else:
+                annotation_progress[pid][q["id"]] = True
     a = 0
     b = len(annotation_progress[pid])
     for k in annotation_progress[pid]:

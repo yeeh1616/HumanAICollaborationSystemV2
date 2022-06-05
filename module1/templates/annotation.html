@@ -112,8 +112,13 @@
                     </div>
 
                     <div>
-                        <button><a href="{{ url_for('annotation.get_annotation', policy_id=policy.policy_id, question_id=pre) }}"><</a></button>
-                        <button><a href="{{ url_for('annotation.get_annotation', policy_id=policy.policy_id, question_id=next) }}">></a></button>
+                        {% if pre > 0 %}
+                            <button><a href="{{ url_for('annotation.get_annotation', policy_id=policy.policy_id, question_id=pre) }}"><</a></button>
+                        {% endif %}
+
+                        {% if next <= total %}
+                            <button><a href="{{ url_for('annotation.get_annotation', policy_id=policy.policy_id, question_id=next) }}">></a></button>
+                        {% endif %}
                     </div>
                 {% endfor %}
             </div>
