@@ -3,6 +3,8 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from flask import Blueprint, render_template
+
+from module1.helper import setValue, getValue
 from module1.models import CoronaNet
 from nltk.corpus import stopwords
 from flask import request
@@ -30,7 +32,7 @@ record how many questions have been saved, key is policy_id, value is a 2-d arra
 annotation_progress = {}
 
 
-@bp_annotation.route("/policies/<int:policy_id>/<int:question_id>/annotation", methods=['GET', 'POST'])
+@bp_annotation.route("/annotation/<int:policy_id>/<int:question_id>", methods=['GET', 'POST'])
 def get_annotation(policy_id, question_id):
     model_name = 'deepset/bert-base-cased-squad2'
 
@@ -138,141 +140,11 @@ def get_annotation(policy_id, question_id):
 def get_option_text_by_qid(policy_id, question_id, option_id):
     questions = q_cache[int(policy_id)]
     for question in questions:
-        if question["id"] == question_id:
+        if question["id"] == int(question_id):
             options = question["options"]
             for option in options:
                 if option["id"] == option_id:
                     return option["option"], option["note"]
-
-
-def setValue(policy, columnName, answer):
-    # if columnName == 'record_id':
-    #     policy.record_id = answer
-
-    if columnName == 'policy_id':
-        policy.policy_id = answer
-
-    elif columnName == 'entry_type':
-        policy.entry_type = answer
-
-    elif columnName == 'correct_type':
-        policy.correct_type = answer
-
-    elif columnName == 'update_type':
-        policy.update_type = answer
-
-    elif columnName == 'update_level':
-        policy.update_level = answer
-
-    elif columnName == 'description':
-        policy.description = answer
-
-    elif columnName == 'date_announced':
-        policy.date_announced = answer
-
-    elif columnName == 'date_start':
-        policy.date_start = answer
-
-    elif columnName == 'date_end':
-        policy.date_end = answer
-
-    elif columnName == 'country':
-        policy.country = answer
-
-    elif columnName == 'ISO_A3':
-        policy.ISO_A3 = answer
-
-    elif columnName == 'ISO_A2':
-        policy.ISO_A2 = answer
-
-    elif columnName == 'init_country_level':
-        policy.init_country_level = answer
-
-    elif columnName == 'domestic_policy':
-        policy.domestic_policy = answer
-
-    elif columnName == 'province':
-        policy.province = answer
-
-    elif columnName == 'ISO_L2':
-        policy.ISO_L2 = answer
-
-    elif columnName == 'city':
-        policy.city = answer
-
-    elif columnName == 'type':
-        policy.type = answer
-
-    elif columnName == 'type_sub_cat':
-        policy.type_sub_cat = answer
-
-    elif columnName == 'type_text':
-        policy.type_text = answer
-
-    elif columnName == 'institution_status':
-        policy.institution_status = answer
-
-    elif columnName == 'target_country':
-        policy.target_country = answer
-
-    elif columnName == 'target_geog_level':
-        policy.target_geog_level = answer
-
-    elif columnName == 'target_region':
-        policy.target_region = answer
-
-    elif columnName == 'target_province':
-        policy.target_province = answer
-
-    elif columnName == 'target_city':
-        policy.target_city = answer
-
-    elif columnName == 'target_other':
-        policy.target_other = answer
-
-    elif columnName == 'target_who_what':
-        policy.target_who_what = answer
-
-    elif columnName == 'target_direction':
-        policy.target_direction = answer
-
-    elif columnName == 'travel_mechanism':
-        policy.travel_mechanism = answer
-
-    elif columnName == 'compliance':
-        policy.compliance = answer
-
-    elif columnName == 'enforcer':
-        policy.enforcer = answer
-
-    elif columnName == 'dist_index_high_est':
-        policy.dist_index_high_est = answer
-
-    elif columnName == 'dist_index_med_est':
-        policy.dist_index_med_est = answer
-
-    elif columnName == 'dist_index_low_est':
-        policy.dist_index_low_est = answer
-
-    elif columnName == 'dist_index_country_rank':
-        policy.dist_index_country_rank = answer
-
-    elif columnName == 'link':
-        policy.link = answer
-
-    elif columnName == 'date_updated':
-        policy.date_updated = answer
-
-    elif columnName == 'recorded_date':
-        policy.recorded_date = answer
-
-    elif columnName == 'original_text':
-        policy.original_text = answer
-
-    elif columnName == 'status':
-        policy.status = answer
-
-    return policy
 
 
 @bp_annotation.route("/policies/save", methods=['POST'])
@@ -301,9 +173,9 @@ def save():
                     op['checked'] = "False"
 
     pid = int(data["pid"])
-    qid = data["qid"]
+    qid = int(data["qid"])
     annotation_progress[pid][qid] = True
-    a, b = get_annotation_progress(pid)
+    a, b = get_annotation_progress(pid, q_objs)
     return json.dumps({'success': True, 'complete': a, 'total': b}), 200, {'ContentType': 'application/json'}
 
 
@@ -507,28 +379,24 @@ def view(policy_id):
     return render_template('view.html', policy=policy)
 
 
-@bp_annotation.route("/backToPolicy", methods=['GET', 'POST'])
-def backToPolicy():
-    policy_list = CoronaNet.query.paginate(page=1, per_page=10)
-
-    return render_template('policy_list.html', policy_list=policy_list)
-
-
 def get_annotation_progress(pid, q_objs):
     global annotation_progress
 
     policy = CoronaNet.query.filter_by(policy_id=pid).first()
     for q in q_objs:
-        obj_property = getattr(policy, q["columnName"])
+        obj_property = getValue(policy, q["columnName"])
+        qid = q["id"]
 
         if q["taskType"] == 1:
-            if obj_property is not None or obj_property != "":
-                annotation_progress[pid][q["id"]] = False
+            if obj_property is None or obj_property == "":
+                annotation_progress[pid][qid] = False
+            else:
+                annotation_progress[pid][qid] = True
         elif q["taskType"] == 2:
             if obj_property is None or obj_property == "":
-                annotation_progress[pid][q["id"]] = False
+                annotation_progress[pid][qid] = False
             else:
-                annotation_progress[pid][q["id"]] = True
+                annotation_progress[pid][qid] = True
     a = 0
     b = len(annotation_progress[pid])
     for k in annotation_progress[pid]:

@@ -25,12 +25,12 @@
                             <div id="{{ q['id'] }}_op">
                                 {% for option in q["options"] %}
                                     {% if option['checked'] == "True" %}
-                                        <input id="{{ option["id"] }}" type="radio" name="{{ q['id'] }}_answer"
+                                        <input id="{{ option['id'] }}" type="radio" name="{{ q['id'] }}_answer"
                                                value="{{ option['option'] }}"
                                                onclick="text_change('{{ q['id'] }}', '{{ option['isTextEntry'] }}')"
                                                checked>
                                     {% else %}
-                                        <input id="{{ option["id"] }}" type="radio" name="{{ q['id'] }}_answer"
+                                        <input id="{{ option['id'] }}" type="radio" name="{{ q['id'] }}_answer"
                                                value="{{ option['option'] }}"
                                                onclick="text_change('{{ q['id'] }}', '{{ option['isTextEntry'] }}')">
                                     {% endif %}
@@ -113,11 +113,11 @@
 
                     <div>
                         {% if pre > 0 %}
-                            <button><a href="{{ url_for('annotation.get_annotation', policy_id=policy.policy_id, question_id=pre) }}"><</a></button>
+                            <a href="{{ url_for('annotation.get_annotation', policy_id=policy.policy_id, question_id=pre) }}">Previous</a>
                         {% endif %}
 
                         {% if next <= total %}
-                            <button><a href="{{ url_for('annotation.get_annotation', policy_id=policy.policy_id, question_id=next) }}">></a></button>
+                            <a href="{{ url_for('annotation.get_annotation', policy_id=policy.policy_id, question_id=next) }}">Next</a>
                         {% endif %}
                     </div>
                 {% endfor %}

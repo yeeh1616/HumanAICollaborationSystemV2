@@ -18,7 +18,7 @@ nltk.download('stopwords')
 
 
 # http://127.0.0.1:5000/policies/10/get_summary
-@bp_summary.route("/policies/<int:policy_id>/get_summary", methods=['GET', 'POST'])
+@bp_summary.route("/summary/<int:policy_id>", methods=['GET', 'POST'])
 def get_summary(policy_id):
     policy = CoronaNet.query.filter_by(policy_id=policy_id).first()
 
@@ -75,6 +75,7 @@ def get_summary(policy_id):
         policy.description
     policy.highlighted_text = highlighted
     return render_template('summary.html', policy=policy, has_summary=has_summary)
+
 
 @bp_summary.route("/policies/save_summary", methods=['POST'])
 def save_summary():
