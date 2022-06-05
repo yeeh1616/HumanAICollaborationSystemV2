@@ -3,7 +3,6 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from flask import Blueprint, render_template
-from flask_login import login_required
 from module1.models import CoronaNet
 from nltk.corpus import stopwords
 from flask import request
@@ -29,6 +28,112 @@ record how many questions have been saved, key is policy_id, value is a 2-d arra
 
 '''
 annotation_progress = {}
+
+
+@bp_annotation.route("/policies/<int:policy_id>/<int:question_id>/annotation", methods=['GET', 'POST'])
+def get_annotation(policy_id, question_id):
+    model_name = 'deepset/bert-base-cased-squad2'
+
+    global q_cache
+    global annotation_progress
+    # q_objs = None
+
+    if policy_id not in q_cache.keys():
+        with open('./module1/static/questions.json', encoding="utf8") as f:
+            q_objs = json.load(f)
+            q_cache[policy_id] = q_objs
+        annotation_progress[policy_id] = {}
+    else:
+        q_objs = q_cache[policy_id]
+
+    policy = CoronaNet.query.filter_by(policy_id=policy_id).first()
+    context = policy.description.split('.')
+    has_answer = False
+
+    qqqqq = []
+
+    for q in q_objs:
+        db_column_name = q["columnName"]
+        obj_property = getattr(policy, db_column_name)
+
+        if q["id"] == question_id:
+            print(q["id"])
+            if q["taskType"] == 1:
+                options_list = []
+                for option in q["options"]:
+                    if not option["isTextEntry"]:
+                        options_list.append(option["option"] if option["note"] == "" else option["note"])
+                q["AI_QA_result"] = multi_choice_QA(policy.description, options_list)[0]
+                m_cos = 0
+                arr = q["AI_QA_result"].tolist()
+                max_cos = max(arr)
+
+                if obj_property is None or obj_property == "":
+                    for option in q["options"]:
+                        if m_cos == option["cos"]:
+                            q["answers"] = option["option"]
+                else:
+                    q["answers"] = obj_property
+                    has_answer = True
+
+                if has_answer:
+                    a = annotation_progress[policy_id]
+                    a[q["id"]] = True
+                    for i in range(0, len(q["AI_QA_result"])):
+                        q["options"][i]["cos"] = q["AI_QA_result"][i]
+                    for option in q["options"]:
+                        if option["cos"] == max_cos:
+                            option["type"] = 2
+                            break
+                    for option in q["options"]:
+                        if "[Text entry]" in option["option"] and "[Text entry]" in q["answers"]:
+                            option["checked"] = "True"
+                            option["type"] = 1
+                            q["answers"] = q["answers"].split("|")[0]
+                            break
+                        elif option["option"] == q["answers"]:
+                            option["checked"] = "True"
+                            option["type"] = 1
+                            break
+                else:
+                    annotation_progress[policy_id][q["id"]] = False
+                    for i in range(0, len(q["AI_QA_result"])):
+                        # q["options"][i]["cos"] = round(q["AI_QA_result"][i])
+                        q["options"][i]["cos"] = q["AI_QA_result"][i]
+                        if q["AI_QA_result"][i] == max_cos:
+                            q["options"][i]["checked"] = "True"
+
+                    for option in q["options"]:
+                        if option["cos"] == max_cos:
+                            option["checked"] = "True"
+                            option["type"] = 2
+                            break
+                q["has_answer"] = has_answer
+            elif q["taskType"] == 2:
+                if obj_property is None or obj_property == "":
+                    q["answers"] = multi_QA(q["question"], context, model_name)
+                    annotation_progress[policy_id][q["id"]] = False
+                else:
+                    q["answers"] = obj_property
+                    has_answer = True
+                    annotation_progress[policy_id][q["id"]] = True
+                q["has_answer"] = has_answer
+            qqqqq.append(q)
+            break
+
+    summary_list = get_policy_obj(policy.description)
+    graph_list = get_policy_obj(policy.original_text)
+    a, b = get_annotation_progress(policy_id)
+    return render_template('annotation.html',
+                           policy=policy,
+                           questions=qqqqq,
+                           summary_list=summary_list,
+                           graph_list=graph_list,
+                           annotation_progress=annotation_progress[policy_id],
+                           complete=a,
+                           total=b,
+                           pre=question_id-1,
+                           next=question_id+1)
 
 
 def get_option_text_by_qid(policy_id, question_id, option_id):
@@ -172,7 +277,6 @@ def setValue(policy, columnName, answer):
 
 
 @bp_annotation.route("/policies/save", methods=['POST'])
-@login_required
 def save():
     dataJson = request.data.decode("utf-8")
     data = json.loads(dataJson)
@@ -205,7 +309,6 @@ def save():
 
 
 @bp_annotation.route("/policies/save2", methods=['POST'])
-@login_required
 def save2():
     dataJson = request.data.decode("utf-8")
     data = json.loads(dataJson)
@@ -234,7 +337,6 @@ def save2():
 
 
 @bp_annotation.route("/policies/highlighting", methods=['POST'])
-@login_required
 def get_highlighting_text():
     data = request.data.decode("utf-8")
     data = data.split("------")
@@ -343,105 +445,6 @@ def multi_choice_QA(policy, options_list):
     )
 
 
-@bp_annotation.route("/policies/<int:policy_id>/annotation", methods=['GET', 'POST'])
-@login_required
-def get_annotation(policy_id):
-    model_name = 'deepset/bert-base-cased-squad2'
-
-    global q_cache
-    global annotation_progress
-    # q_objs = None
-
-    if policy_id not in q_cache.keys():
-        with open('./module1/static/questions.json', encoding="utf8") as f:
-            q_objs = json.load(f)
-            q_cache[policy_id] = q_objs
-        annotation_progress[policy_id] = {}
-    else:
-        q_objs = q_cache[policy_id]
-
-    policy = CoronaNet.query.filter_by(policy_id=policy_id).first()
-    context = policy.description.split('.')
-    has_answer = False
-
-    for q in q_objs:
-        db_column_name = q["columnName"]
-        obj_property = getattr(policy, db_column_name)
-
-        # test
-        # if answer == '':
-        #     answer = 'A dimension other than the policy initiator'
-
-        print(q["id"])
-        if q["taskType"] == 1:
-            options_list = []
-            for option in q["options"]:
-                if not option["isTextEntry"]:
-                    options_list.append(option["option"] if option["note"] == "" else option["note"])
-            q["AI_QA_result"] = multi_choice_QA(policy.description, options_list)[0]
-            m_cos = 0
-            arr = q["AI_QA_result"].tolist()
-            # max_cos = round(max(arr), 2)
-            max_cos = max(arr)
-
-            if obj_property is None or obj_property == "":
-                for option in q["options"]:
-                    if m_cos == option["cos"]:
-                        q["answers"] = option["option"]
-            else:
-                q["answers"] = obj_property
-                has_answer = True
-
-            if has_answer:
-                a = annotation_progress[policy_id]
-                a[q["id"]] = True
-                for i in range(0, len(q["AI_QA_result"])):
-                    q["options"][i]["cos"] = q["AI_QA_result"][i]
-                for option in q["options"]:
-                    if option["cos"] == max_cos:
-                        option["type"] = 2
-                        break
-                for option in q["options"]:
-                    if "[Text entry]" in option["option"] and "[Text entry]" in q["answers"]:
-                        option["checked"] = "True"
-                        option["type"] = 1
-                        q["answers"] = q["answers"].split("|")[0]
-                        break
-                    elif option["option"] == q["answers"]:
-                        option["checked"] = "True"
-                        option["type"] = 1
-                        break
-            else:
-                annotation_progress[policy_id][q["id"]] = False
-                for i in range(0, len(q["AI_QA_result"])):
-                    # q["options"][i]["cos"] = round(q["AI_QA_result"][i])
-                    q["options"][i]["cos"] = q["AI_QA_result"][i]
-                    if q["AI_QA_result"][i] == max_cos:
-                        q["options"][i]["checked"] = "True"
-
-                for option in q["options"]:
-                    if option["cos"] == max_cos:
-                        option["checked"] = "True"
-                        option["type"] = 2
-                        break
-            q["has_answer"] = has_answer
-        elif q["taskType"] == 2:
-            if obj_property is None or obj_property == "":
-                q["answers"] = multi_QA(q["question"], context, model_name)
-                annotation_progress[policy_id][q["id"]] = False
-            else:
-                q["answers"] = obj_property
-                has_answer = True
-                annotation_progress[policy_id][q["id"]] = True
-            q["has_answer"] = has_answer
-
-    summary_list = get_policy_obj(policy.description)
-    # original_list = policy.original_text.split('\n')
-    graph_list = get_policy_obj(policy.original_text)
-    a, b = get_annotation_progress(policy_id)
-    return render_template('annotation.html', policy=policy, questions=q_objs, summary_list=summary_list, graph_list=graph_list, annotation_progress=annotation_progress[policy_id], complete=a, total=b)
-
-
 def get_policy_obj(policy):
     i = 0
     j = 0
@@ -500,14 +503,12 @@ def consine_cal(v1, v2):
 
 
 @bp_annotation.route("/policies/<int:policy_id>/view", methods=['GET', 'POST'])
-@login_required
 def view(policy_id):
     policy = CoronaNet.query.filter_by(policy_id=policy_id).first().__dict__
     return render_template('view.html', policy=policy)
 
 
 @bp_annotation.route("/backToPolicy", methods=['GET', 'POST'])
-@login_required
 def backToPolicy():
     policy_list = CoronaNet.query.paginate(page=1, per_page=10)
 

@@ -106,8 +106,14 @@
                                 <button onclick="highlighting('{{ q['id'] }}', '{{ q['answers'] }}')">Highlighting
                                 </button>
                             </div>
+
                             <br><br><br>
                         {% endif %}
+                    </div>
+
+                    <div>
+                        <button><a href="{{ url_for('annotation.get_annotation', policy_id=policy.policy_id, question_id=pre) }}"><</a></button>
+                        <button><a href="{{ url_for('annotation.get_annotation', policy_id=policy.policy_id, question_id=next) }}">></a></button>
                     </div>
                 {% endfor %}
             </div>
