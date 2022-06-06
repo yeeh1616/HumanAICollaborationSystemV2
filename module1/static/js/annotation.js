@@ -134,6 +134,50 @@ function highlighting_multichoice(policyId, questionId) {
     xhttp.send(policyId + "------" + questionId + "------" + optionId);
 }
 
+function show_hide_highlighting_multichoice(me, policyId, questionId) {
+    var nodes1 = document.getElementById("summary").children;
+    for(i = 0; i < nodes1.length; i++){
+        var node1 = nodes1[i];
+        if(node1.nodeName === 'DIV'){
+            var nodes2 = node1.children;
+            for(j = 0; j < nodes2.length; j++){
+                var node3 = nodes2[j];
+                try {
+                    if(node3.nodeName === 'SPAN'){
+                        if(me.innerHTML == "Hide Highlighting"){
+                            node3.style.backgroundColor = '';
+                        } else {
+                            var scoreStr = document.getElementById(node3.id+"_score").value;
+                            var score = parseFloat(scoreStr);
+                            if(score>=0.9){
+                                node3.style.backgroundColor = '#37ff00';
+                            }else if(score>=0.8 && score<0.9){
+                                node3.style.backgroundColor = '#a0ff6e';
+                            }else if(score>=0.7 && score <0.8){
+                                node3.style.backgroundColor = '#ffee04';
+                            }else if(score>=0.6 && score <0.7){
+                                node3.style.backgroundColor = '#fff833';
+                            }else if(score>=0.5 && score <0.6){
+                                node3.style.backgroundColor = '#fcf68f';
+                            }else if(score>=0.4 && score <0.5){
+                                node3.style.backgroundColor = '#fdfcc4';
+                            }else {
+                                node3.style.backgroundColor = '';
+                            }
+                        }
+                    }
+                } catch (error) {}
+            }
+        }
+    }
+
+    if(me.innerHTML == "Hide Highlighting"){
+        me.innerHTML = "Highlighting";
+    } else {
+        me.innerHTML = "Hide Highlighting";
+    }
+}
+
 function save1(btn, qid, pid, column) {
     var options = document.getElementById(qid + "_op").children;
 

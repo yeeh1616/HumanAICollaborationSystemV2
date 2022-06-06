@@ -16,8 +16,8 @@ import re
 
 bp_annotation = Blueprint('annotation', __name__)
 
-q_cache = {} # policy's json object cache
-p_cache = {} # policy's text cache
+q_cache = {}  # policy's json object cache
+p_cache = {}  # policy's text cache
 
 '''
 record how many questions have been saved, key is policy_id, value is a 2-d array
@@ -110,6 +110,7 @@ def get_annotation_AI(policy_id, question_id):
                         if option["cos"] == max_cos:
                             option["checked"] = "True"
                             option["type"] = 2
+                            graph_list = get_highlighting_text_base_obj(policy_id, question_id, option["id"])
                             break
                 q["has_answer"] = has_answer
             elif q["taskType"] == 2:
@@ -125,7 +126,7 @@ def get_annotation_AI(policy_id, question_id):
             break
 
     summary_list = get_policy_obj(policy.original_text)
-    graph_list = get_policy_obj(policy.original_text)
+    # graph_list = get_policy_obj(policy.original_text)
     a, b = get_annotation_progress(policy_id, q_objs)
     return render_template('annotation.html',
                            policy=policy,
@@ -135,8 +136,8 @@ def get_annotation_AI(policy_id, question_id):
                            annotation_progress=annotation_progress[policy_id],
                            complete=a,
                            total=b,
-                           pre=question_id-1,
-                           next=question_id+1)
+                           pre=question_id - 1,
+                           next=question_id + 1)
 
 
 def get_annotation_manual(policy_id, question_id):
@@ -207,8 +208,8 @@ def get_annotation_manual(policy_id, question_id):
                            annotation_progress=annotation_progress[policy_id],
                            complete=a,
                            total=b,
-                           pre=question_id-1,
-                           next=question_id+1)
+                           pre=question_id - 1,
+                           next=question_id + 1)
 
 
 def get_option_text_by_qid(policy_id, question_id, option_id):
@@ -285,9 +286,11 @@ def save2():
 def get_highlighting_text():
     data = request.data.decode("utf-8")
     data = data.split("------")
-    policy_id = data[0]
-    question_id = data[1]
-    option_id = data[2]
+
+    return get_highlighting_text_base(data[0], data[1], data[2])
+
+
+def get_highlighting_text_base(policy_id, question_id, option_id):
     option_text = get_option_text_by_qid(policy_id, question_id, option_id)
 
     global p_cache
@@ -299,32 +302,45 @@ def get_highlighting_text():
     return p_cache[question_id]
 
 
+def get_highlighting_text_base_obj(policy_id, question_id, option_id):
+    option_text = get_option_text_by_qid(policy_id, question_id, option_id)
+    return get_highlight_sentences_obj(policy_id, option_text)
+
+
 def get_highlight_sentences(policy_id, option_text):
+    policy_text = json.dumps(get_highlight_sentences_obj(policy_id, option_text))
+    return policy_text
+
+
+def get_highlight_sentences_obj(policy_id, option_text):
     policy_original_text = CoronaNet.query.filter_by(policy_id=policy_id).first().__dict__
     policy_graphs = policy_original_text["original_text"]
-    policy_graphs = policy_graphs.replace('\n\n','\n').split('\n')
+    policy_graphs = policy_graphs.replace('\n\n', '\n').split('\n')
 
-    g_id = 0 # the index of a graph
-    g_dic={}
+    g_id = 0  # the index of a graph
+    g_dic = {}
     for g in policy_graphs:
         sep = '.'
         sentences = [x + sep for x in g.split(sep)]
+        try:
+            sentences.remove('.')
+        except:
+            pass
 
-        s_id = 0 # the index of a sentence in a graph
-        g_dic[g_id]=[]
-        s_dic = {}
+        s_id = 0  # the index of a sentence in a graph
+        g_dic[g_id] = []
+
         for s in sentences:
-            s.replace("..",".")
-            sentence_embeddings = model2.encode([option_text[0]+option_text[1], s])
+            s.replace("..", ".")
+            sentence_embeddings = model2.encode([option_text[0] + option_text[1], s])
             score = cosine_similarity(
                 [sentence_embeddings[0]],
                 sentence_embeddings[1:]
             )
-            g_dic[g_id].append({"sentence_id":s_id, "sentence":s, "score":str(score[0][0])})
+            g_dic[g_id].append({"sentence_id": s_id, "sentence": s, "score": score[0][0]})
             s_id = s_id + 1
         g_id = g_id + 1
-    policy_text = json.dumps(g_dic)
-    return policy_text
+    return g_dic
 
 
 def filter_answer_by_consine_similarity(s1, s2):
@@ -335,12 +351,14 @@ def filter_answer_by_consine_similarity(s1, s2):
     else:
         return False
 
+
 def signle_QA2(question, context):
     inputs = tokenizer.encode_plus(question, context, return_tensors="pt")
     answer_start_scores, answer_end_scores = model(**inputs)
     answer_start = torch.argmax(answer_start_scores)
     answer_end = torch.argmax(answer_end_scores) + 1
-    answer = tokenizer.convert_tokens_to_string(tokenizer.convert_ids_to_tokens(inputs["input_ids"][0][answer_start:answer_end])).replace('[CLS]', '')
+    answer = tokenizer.convert_tokens_to_string(
+        tokenizer.convert_ids_to_tokens(inputs["input_ids"][0][answer_start:answer_end])).replace('[CLS]', '')
 
     if '[SEP]' in answer:
         answer = (answer.split('[SEP]')[1]).strip()
@@ -396,15 +414,15 @@ def get_policy_obj(policy):
         sentence_list = re.split('(?<=[.!?]) +', g)
         sentence_dic = {}
         for s in sentence_list:
-            sentence_dic["s"+str(i)] = s
-            i+=1
+            sentence_dic["s" + str(i)] = s
+            i += 1
         res.append(sentence_dic)
-        j+=1
+        j += 1
     return res
 
 
 def max_cos(option, answers):
-    max=0
+    max = 0
     answers = answers.split('|')
     for answer in answers:
         c = cos(option, answer)

@@ -77,9 +77,7 @@
                                     </button>
                                 {% endif %}
 
-                                <button onclick="highlighting_multichoice('{{ policy.policy_id }}', '{{ q['id'] }}')">
-                                    Highlighting
-                                </button>
+                                <button id="btn_shhl_{{ q['id'] }}" onclick="show_hide_highlighting_multichoice(this, '{{ policy.policy_id }}', '{{ q['id'] }}')">Hide Highlighting</button>
                             </div>
                             <br><br><br>
                         {% elif q['taskType'] == 2 and q["selected"] %}
@@ -103,7 +101,7 @@
                                         Save
                                     </button>
                                 {% endif %}
-                                <button onclick="highlighting('{{ q['id'] }}', '{{ q['answers'] }}')">Highlighting
+                                <button onclick="hide_highlighting('{{ q['id'] }}', '{{ q['answers'] }}')">Hide Highlighting
                                 </button>
                             </div>
 
@@ -145,12 +143,25 @@
     <div class="column">
         <h1>Policy Id: {{ policy.policy_id }}</h1>
         <div class="ex2" id="summary">
-            {% for g in graph_list %}
+            {% for key in graph_list %}
                 <div>
-                    {% for key in g %}
-                        <span id='{{ key }}'>
-                        {{ g[key] }}
-                    </span>
+                    {% for s in graph_list[key] %}
+                        {% if s['score'] >= 0.9 %}
+                            <span id="g{{ key }}_s{{ s['sentence_id'] }}" style="background-color:#37ff00;">{{ s['sentence'] }}</span>
+                        {% elif s['score'] >= 0.8 and s['score'] < 0.9 %}
+                            <span id="g{{ key }}_s{{ s['sentence_id'] }}" style="background-color:#a0ff6e;">{{ s['sentence'] }}</span>
+                        {% elif s['score'] >= 0.7 and s['score'] < 0.8 %}
+                            <span id="g{{ key }}_s{{ s['sentence_id'] }}" style="background-color:#ffee04;">{{ s['sentence'] }}</span>
+                        {% elif s['score'] >= 0.6 and s['score'] < 0.7 %}
+                            <span id="g{{ key }}_s{{ s['sentence_id'] }}" style="background-color:#fff833;">{{ s['sentence'] }}</span>
+                        {% elif s['score'] >= 0.5 and s['score'] < 0.6 %}
+                            <span id="g{{ key }}_s{{ s['sentence_id'] }}" style="background-color:#fcf68f;">{{ s['sentence'] }}</span>
+                        {% elif s['score'] >= 0.4 and s['score'] < 0.5 %}
+                            <span id="g{{ key }}_s{{ s['sentence_id'] }}" style="background-color:#fdfcc4;">{{ s['sentence'] }}</span>
+                        {% else %}
+                            <span id="g{{ key }}_s{{ s['sentence_id'] }}">{{ s['sentence'] }}</span>
+                        {% endif %}
+                        <input type="hidden" id="g{{ key }}_s{{ s['sentence_id'] }}_score" value="{{ s['score'] }}">
                     {% endfor %}
                 </div>
                 <br>
