@@ -45,8 +45,9 @@ function reload_summary(pid) {
 function goToAnnoation(pid, url){
     document.getElementById("w3review").disabled = true;
     document.getElementById("save_summary").disabled = true;
-    document.getElementById("btn_reload").disabled = true;
-
+    try {
+        document.getElementById("btn_reload").disabled = true;
+    } catch (error) {}
     save_summary(pid, true);
     location.replace(url);
 }

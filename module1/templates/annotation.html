@@ -56,9 +56,9 @@
 
                                     {% if option['isTextEntry'] %}
                                         {% if option['checked'] == "True" %}
-                                            <div id="tb_{{ q['id'] }}" style="display: inline-block;"><textarea oninput="text_change2('{{ q['id'] }}', '{{ option['isTextEntry'] }}')" value='{{ q['answers'] }}'>{{ q['answers'] }}</textarea></div>
+                                            <div id="tb_{{ q['id'] }}" style="display: inline-block;"><textarea oninput="text_change2('{{ q['id'] }}', '{{ option['isTextEntry'] }}')" value='{{ q['answers'] }}' style="width: 867px; height: 122px;">{{ q['answers'] }}</textarea></div>
                                         {% else %}
-                                            <div id="tb_{{ q['id'] }}" style="display: none;"><textarea oninput="text_change2('{{ q['id'] }}', '{{ option['isTextEntry'] }}')"></textarea>
+                                            <div id="tb_{{ q['id'] }}" style="display: none;"><textarea oninput="text_change2('{{ q['id'] }}', '{{ option['isTextEntry'] }}')" style="width: 867px; height: 122px;"></textarea>
                                             </div>
                                         {% endif %}
                                     {% endif %}
@@ -89,7 +89,7 @@
                             <p>Clarification: {{ q['clarification'] }}</p>
                             <div><p>AI Recommendation: {{ q["answers"] }}</p></div>
                             <textarea id="{{ q['id'] }}_answer" name="{{ q['id'] }}_answer"
-                                      onkeyup="text_change3('btn_save_{{ q['id'] }}')">{{ q["answers"] }}</textarea>
+                                      onkeyup="text_change3('btn_save_{{ q['id'] }}')" style="width: 867px; height: 122px;">{{ q["answers"] }}</textarea>
                             <br><br>
                             <div>
                                 {% if q['has_answer'] %}

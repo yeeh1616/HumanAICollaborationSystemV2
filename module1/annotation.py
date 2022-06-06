@@ -1,6 +1,4 @@
-from transformers import AutoTokenizer, AutoModelForQuestionAnswering
 from sklearn.feature_extraction.text import CountVectorizer
-from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from flask import Blueprint, render_template
 
@@ -8,7 +6,7 @@ from module1.helper import setValue, getValue
 from module1.models import CoronaNet
 from nltk.corpus import stopwords
 from flask import request
-from module1 import db
+from module1 import db, MANUAL_POLICY_ID, model2, tokenizer, model, nlp
 
 import numpy.linalg as LA
 import numpy as np
@@ -17,10 +15,6 @@ import json
 import re
 
 bp_annotation = Blueprint('annotation', __name__)
-
-tokenizer = AutoTokenizer.from_pretrained("deepset/bert-base-cased-squad2")
-model = AutoModelForQuestionAnswering.from_pretrained("deepset/bert-base-cased-squad2")
-model2 = SentenceTransformer('bert-base-nli-mean-tokens')
 
 q_cache = {} # policy's json object cache
 p_cache = {} # policy's text cache
@@ -34,8 +28,16 @@ annotation_progress = {}
 
 @bp_annotation.route("/annotation/<int:policy_id>/<int:question_id>", methods=['GET', 'POST'])
 def get_annotation(policy_id, question_id):
-    model_name = 'deepset/bert-base-cased-squad2'
+    if policy_id < 1 or policy_id > MANUAL_POLICY_ID * 2:
+        return "Policy {} is not found.".format(policy_id)
 
+    if policy_id < MANUAL_POLICY_ID:
+        return get_annotation_manual(policy_id, question_id)
+    else:
+        return get_annotation_AI(policy_id, question_id)
+
+
+def get_annotation_AI(policy_id, question_id):
     global q_cache
     # global annotation_progress
 
@@ -48,7 +50,7 @@ def get_annotation(policy_id, question_id):
         q_objs = q_cache[policy_id]
 
     policy = CoronaNet.query.filter_by(policy_id=policy_id).first()
-    context = policy.description.split('.')
+    context = policy.original_text.split('.')
     has_answer = False
 
     qqqqq = []
@@ -64,7 +66,7 @@ def get_annotation(policy_id, question_id):
                 for option in q["options"]:
                     if not option["isTextEntry"]:
                         options_list.append(option["option"] if option["note"] == "" else option["note"])
-                q["AI_QA_result"] = multi_choice_QA(policy.description, options_list)[0]
+                q["AI_QA_result"] = multi_choice_QA(policy.original_text, options_list)[0]
                 m_cos = 0
                 arr = q["AI_QA_result"].tolist()
                 max_cos = max(arr)
@@ -112,7 +114,7 @@ def get_annotation(policy_id, question_id):
                 q["has_answer"] = has_answer
             elif q["taskType"] == 2:
                 if obj_property is None or obj_property == "":
-                    q["answers"] = multi_QA(q["question"], context, model_name)
+                    q["answers"] = multi_QA(q["question"], context)
                     # annotation_progress[policy_id][q["id"]] = False
                 else:
                     q["answers"] = obj_property
@@ -122,10 +124,82 @@ def get_annotation(policy_id, question_id):
             qqqqq.append(q)
             break
 
-    summary_list = get_policy_obj(policy.description)
+    summary_list = get_policy_obj(policy.original_text)
     graph_list = get_policy_obj(policy.original_text)
     a, b = get_annotation_progress(policy_id, q_objs)
     return render_template('annotation.html',
+                           policy=policy,
+                           questions=qqqqq,
+                           summary_list=summary_list,
+                           graph_list=graph_list,
+                           annotation_progress=annotation_progress[policy_id],
+                           complete=a,
+                           total=b,
+                           pre=question_id-1,
+                           next=question_id+1)
+
+
+def get_annotation_manual(policy_id, question_id):
+    global q_cache
+
+    if policy_id not in q_cache.keys():
+        with open('./module1/static/questions.json', encoding="utf8") as f:
+            q_objs = json.load(f)
+            q_cache[policy_id] = q_objs
+        annotation_progress[policy_id] = {}
+    else:
+        q_objs = q_cache[policy_id]
+
+    policy = CoronaNet.query.filter_by(policy_id=policy_id).first()
+    has_answer = False
+
+    qqqqq = []
+
+    for q in q_objs:
+        db_column_name = q["columnName"]
+        obj_property = getValue(policy, db_column_name)
+
+        if q["id"] == question_id:
+            if q["taskType"] == 1:
+                options_list = []
+                for option in q["options"]:
+                    if not option["isTextEntry"]:
+                        options_list.append(option["option"] if option["note"] == "" else option["note"])
+
+                if obj_property is None or obj_property == "":
+                    pass
+                else:
+                    q["answers"] = obj_property
+                    has_answer = True
+
+                if has_answer:
+                    for option in q["options"]:
+                        if "[Text entry]" in option["option"] and "[Text entry]" in q["answers"]:
+                            option["checked"] = "True"
+                            option["type"] = 1
+                            q["answers"] = q["answers"].split("|")[0]
+                            break
+                        elif option["option"] == q["answers"]:
+                            option["checked"] = "True"
+                            option["type"] = 1
+                            break
+                else:
+                    pass
+                q["has_answer"] = has_answer
+            elif q["taskType"] == 2:
+                if obj_property is None or obj_property == "":
+                    pass
+                else:
+                    q["answers"] = obj_property
+                    has_answer = True
+                q["has_answer"] = has_answer
+            qqqqq.append(q)
+            break
+
+    summary_list = get_policy_obj(policy.description)
+    graph_list = get_policy_obj(policy.original_text)
+    a, b = get_annotation_progress(policy_id, q_objs)
+    return render_template('annotation_manual.html',
                            policy=policy,
                            questions=qqqqq,
                            summary_list=summary_list,
@@ -276,10 +350,7 @@ def signle_QA2(question, context):
     return answer
 
 
-def signle_QA(question, context, model_name):
-    from transformers import pipeline
-
-    nlp = pipeline('question-answering', model=model_name, tokenizer=model_name)
+def signle_QA(question, context):
     QA_input = {
         'question': question,
         'context': context
@@ -289,13 +360,13 @@ def signle_QA(question, context, model_name):
     return res['answer']
 
 
-def multi_QA(question, contexts, model_name):
+def multi_QA(question, contexts):
     answers = set([])
     for context in contexts:
         if context == '':
             continue
 
-        answer = signle_QA(question, context, model_name)
+        answer = signle_QA(question, context)
         if filter_answer_by_consine_similarity(question, answer):
             answers.add(answer)
 

@@ -1,13 +1,30 @@
+import nltk
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_bcrypt import Bcrypt
 
+from transformers import AutoTokenizer, AutoModelForQuestionAnswering
+from sentence_transformers import SentenceTransformer
+from transformers import pipeline
+# from nltk.corpus import stopwords
+
 db = SQLAlchemy()
 bcrypt = Bcrypt()
 
+model_name = 'deepset/bert-base-cased-squad2'
+tokenizer = AutoTokenizer.from_pretrained("deepset/bert-base-cased-squad2")
+model = AutoModelForQuestionAnswering.from_pretrained(model_name)
+model2 = SentenceTransformer('bert-base-nli-mean-tokens')
+nlp = pipeline('question-answering', model=model_name, tokenizer=model_name)
+nltk.download('stopwords')
+nltk.download('punkt')
+
+MANUAL_POLICY_ID: int = 65
+
 
 def create_app():
+
     app = Flask(__name__)
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
     app.config['SECRET_KEY'] = 'thisisasecretkey'

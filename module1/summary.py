@@ -1,28 +1,36 @@
-from transformers import AutoTokenizer, AutoModelForQuestionAnswering
 from nltk.tokenize import word_tokenize, sent_tokenize
 from flask import Blueprint, render_template
 from module1.models import CoronaNet
 from nltk.corpus import stopwords
 from flask import request
-from module1 import db
+from module1 import db, MANUAL_POLICY_ID
 
 import json
-import nltk
 
 bp_summary = Blueprint('summary', __name__)
 
-tokenizer = AutoTokenizer.from_pretrained("deepset/bert-base-cased-squad2")
-model = AutoModelForQuestionAnswering.from_pretrained("deepset/bert-base-cased-squad2")
 
-nltk.download('stopwords')
-
-
-# http://127.0.0.1:5000/policies/10/get_summary
+# http://127.0.0.1:5000/summary/10
 @bp_summary.route("/summary/<int:policy_id>", methods=['GET', 'POST'])
 def get_summary(policy_id):
+    if policy_id < 1 or policy_id > MANUAL_POLICY_ID * 2:
+        return "Policy {} is not found.".format(policy_id)
+
+    if policy_id < MANUAL_POLICY_ID:
+        return get_summary_manual(policy_id)
+    else:
+        return get_summary_AI(policy_id)
+
+
+def get_summary_manual(policy_id):
+    policy = CoronaNet.query.filter_by(policy_id=policy_id).first()
+    return render_template('summary_manual.html', policy=policy)
+
+
+def get_summary_AI(policy_id):
     policy = CoronaNet.query.filter_by(policy_id=policy_id).first()
 
-    nltk.download('punkt')
+    # nltk.download('punkt')
     text = policy.original_text
     stopWords = stopwords.words('english')
     stopWords = set(stopWords)
@@ -107,7 +115,6 @@ def reload_summary():
 
     policy = CoronaNet.query.filter_by(policy_id=policy_id).first()
 
-    nltk.download('punkt')
     text = policy.original_text
     stopWords = stopwords.words('english')
     stopWords = set(stopWords)
