@@ -109,17 +109,17 @@ function highlighting_multichoice(policyId, questionId) {
                     // 6. if socre >= 0.5
                     // 7. if socre < 0.5
                     if(score>=0.9){
-                        span.style.backgroundColor = '#ff9f00';
+                        span.style.backgroundColor = '#37ff00';
                     }else if(score>=0.8 && score<0.9){
-                        span.style.backgroundColor = '#c37400';
+                        span.style.backgroundColor = '#a0ff6e';
                     }else if(score>=0.7 && score <0.8){
-                        span.style.backgroundColor = '#fff300';
+                        span.style.backgroundColor = '#ffee04';
                     }else if(score>=0.6 && score <0.7){
-                        span.style.backgroundColor = '#fffba1';
+                        span.style.backgroundColor = '#fff833';
                     }else if(score>=0.5 && score <0.6){
-                        span.style.backgroundColor = '#008eff';
+                        span.style.backgroundColor = '#fcf68f';
                     }else if(score>=0.4 && score <0.5){
-                        span.style.backgroundColor = '#81c7ff';
+                        span.style.backgroundColor = '#fdfcc4';
                     }else {
 
                     }
