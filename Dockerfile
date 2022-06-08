@@ -13,6 +13,7 @@ RUN pip3 install torch
 RUN pip3 install sklearn
 RUN pip3 install sentence_transformers
 RUN pip3 install -U flask-paginate
+RUN pip3 install gensim
 
 WORKDIR /app
 

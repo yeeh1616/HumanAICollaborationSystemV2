@@ -1,15 +1,15 @@
 import nltk
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager
-from flask_bcrypt import Bcrypt
+import gensim.downloader as api
 
 from transformers import AutoTokenizer, AutoModelForQuestionAnswering
 from sentence_transformers import SentenceTransformer
+from flask_sqlalchemy import SQLAlchemy
+# from flask_login import LoginManager
 from transformers import pipeline
-import gensim.downloader as api
 from nltk.corpus import stopwords
+from flask_bcrypt import Bcrypt
 from nltk import download
+from flask import Flask
 download('stopwords')  # Download stopwords list.
 stop_words = stopwords.words('english')
 wv = api.load('word2vec-google-news-300')
@@ -37,18 +37,21 @@ def create_app():
     db.init_app(app)
     bcrypt.init_app(app)
 
-    login_manager = LoginManager()
-    login_manager.init_app(app)
-    login_manager.login_view = 'auth.login'
-
-    from .models import User
-
-    @login_manager.user_loader
-    def load_user(user_id):
-        return User.query.get(int(user_id))
-
-    from .auth import bp_auth as auth_blueprint
-    app.register_blueprint(auth_blueprint)
+    # login_manager = LoginManager()
+    # login_manager.init_app(app)
+    # login_manager.login_view = 'auth.login'
+    #
+    # from .models import User
+    #
+    # @login_manager.user_loader
+    # def load_user(user_id):
+    #     return User.query.get(int(user_id))
+    #
+    # from .auth import bp_auth as auth_blueprint
+    # app.register_blueprint(auth_blueprint)
+    #
+    # from .policies import bp_policies as policies_blueprint
+    # app.register_blueprint(policies_blueprint)
 
     from .summary import bp_summary as summary_blueprint
     app.register_blueprint(summary_blueprint)
@@ -58,8 +61,5 @@ def create_app():
 
     from .configuration import bp_configuration as configuration_blueprint
     app.register_blueprint(configuration_blueprint)
-
-    from .policies import bp_policies as policies_blueprint
-    app.register_blueprint(policies_blueprint)
 
     return app
