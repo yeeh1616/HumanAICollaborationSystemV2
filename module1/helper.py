@@ -1,3 +1,14 @@
+import re
+from gensim import utils
+from gensim.parsing import preprocess_string
+
+from module1 import stop_words, wv
+from module1.models import CoronaNet
+
+
+TOP_N = 10
+
+
 def setValue(policy, columnName, answer):
     if columnName == 'policy_id':
         policy.policy_id = answer
@@ -252,3 +263,100 @@ def getValue(policy, columnName):
         res = policy.status
 
     return res
+
+def preprocess(text):
+    '''
+    1. First, split text into graph list
+    2. Second, split graph into sentence list
+    3. Finally, return graph list = [[sentence1, sentence2, ...],[sentence1, sentence2, ...],...]
+    '''
+
+    graph_list = []
+    graph_list1 = text.split('\n')
+
+    for g in graph_list1:
+        sentence_list1 = re.split('(?<=[.!?]) +', g)
+        sentence_list2 = []
+
+        for s in sentence_list1:
+            if s != '':
+                sentence_list2.append(s)
+        if len(sentence_list2) > 0:
+            graph_list.append(sentence_list2)
+
+    return graph_list
+
+
+def w2v_sentence(word, sentence):
+    '''
+    Split the sentence into word list, and then get a cosine similarity list (word vs. each of words of the sentence)
+    :param word:
+    :param sentence:
+    :return:
+    '''
+    word_list = utils.simple_preprocess(sentence)
+    pairs = []
+    for w in word_list:
+        pairs.append((word, w))
+
+    res = []
+    for w1, w2 in pairs:
+        if w2 in stop_words:
+            continue
+
+        try:
+            score = wv.similarity(w1, w2)
+            score = str(score)[0:4]
+            score = float(score)
+            res.append((w2, score))
+        except:
+            pass
+        # print('%r\t%r\t%.2f' % (w1, w2, wv.similarity(w1, w2)))
+
+    res.sort(reverse=True, key=lambda y: y[1])
+    res = res[:TOP_N]
+    return res
+
+
+def tmp(column_name, policy_id):
+    policy_original_text = CoronaNet.query.filter_by(policy_id=policy_id).first().__dict__
+    policy_graphs = policy_original_text["original_text"]
+    policy_graphs = policy_graphs.replace('\n\n', '\n').split('\n')
+
+    g_id = 0  # the index of a graph
+    g_dic = {}
+
+    topN = [] # store words with score top 5
+
+    for g in policy_graphs:
+        sep = '.'
+        sentences = [x + sep for x in g.split(sep)]
+        try:
+            sentences.remove('.')
+        except:
+            pass
+
+        s_id = 0  # the index of a sentence in a graph
+        g_dic[g_id] = []
+
+        for s in sentences:
+            if len(preprocess_string(s)) == 0:
+                continue
+
+            s.replace("..", ".")
+            w = 'January' if 'date' in column_name else column_name
+            topN_tmp = w2v_sentence(w, s)
+            topN = topN + topN_tmp
+            topN = list(set(topN))
+            topN.sort(reverse=True, key=lambda y: y[1])
+            topN = topN[:TOP_N]
+            score = topN_tmp[0][1]
+            g_dic[g_id].append({"sentence_id": s_id, "sentence": s, "score": 0})
+            s_id = s_id + 1
+        g_id = g_id + 1
+    return topN, g_dic
+
+if __name__ == '__main__':
+    w = 'date'
+    s = 'February 22 – Full time return for pre-school children in early learning and childcare settings and children in P1-3.'
+    w2v_sentence(w, s)

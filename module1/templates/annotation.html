@@ -85,9 +85,21 @@
                             <h2>{{ q['columnName'] }}</h2>
                             <p>Question: {{ q['question'] }}</p>
                             <p>Clarification: {{ q['clarification'] }}</p>
-                            <div><p>AI Recommendation: {{ q["answers"] }}</p></div>
+                            <div>
+                                <p>AI Recommendation:</p>
+                                {% for a in q["answers"] %}
+                                <input type="radio" name="type2_answer" value="{{ a[0] }}" onclick="type2_highlighting('{{ q['id'] }}', '{{ a[0] }}')"><label>{{ a[0] }}</label>
+                                    {% if a[1] >= 0.8 %}
+                                        <span class="label high">{{ a[1] }}</span>
+                                    {% elif a[1] < 0.8 and a[1] >= 0.6 %}
+                                        <span class="label middle">{{ a[1] }}</span>
+                                    {% elif a[1] < 0.6 %}
+                                        <span class="label low">{{ a[1] }}</span>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
                             <textarea id="{{ q['id'] }}_answer" name="{{ q['id'] }}_answer"
-                                      onkeyup="text_change3('btn_save_{{ q['id'] }}')" style="width: 867px; height: 122px;">{{ q["answers"] }}</textarea>
+                                      onkeyup="text_change3('btn_save_{{ q['id'] }}')" style="width: 867px; height: 122px;">{{ q["answers"][0][0] }}</textarea>
                             <br><br>
                             <div>
                                 {% if q['has_answer'] %}

@@ -7,7 +7,12 @@ from flask_bcrypt import Bcrypt
 from transformers import AutoTokenizer, AutoModelForQuestionAnswering
 from sentence_transformers import SentenceTransformer
 from transformers import pipeline
-# from nltk.corpus import stopwords
+import gensim.downloader as api
+from nltk.corpus import stopwords
+from nltk import download
+download('stopwords')  # Download stopwords list.
+stop_words = stopwords.words('english')
+wv = api.load('word2vec-google-news-300')
 
 db = SQLAlchemy()
 bcrypt = Bcrypt()

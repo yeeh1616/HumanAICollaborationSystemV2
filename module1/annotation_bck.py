@@ -2,7 +2,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from flask import Blueprint, render_template
 
-from module1.helper import setValue, getValue, preprocess, tmp
+from module1.helper import setValue, getValue, preprocess
 from module1.models import CoronaNet
 from nltk.corpus import stopwords
 from flask import request
@@ -53,11 +53,11 @@ def get_annotation_AI(policy_id, question_id):
     context = preprocess(policy.original_text)
     has_answer = False
 
-    questions = []
+    qqqqq = []
 
     for q in q_objs:
         db_column_name = q["columnName"]
-        db_column_answer = getattr(policy, db_column_name)
+        obj_property = getattr(policy, db_column_name)
 
         if q["id"] == question_id:
             print(q["id"])
@@ -71,12 +71,12 @@ def get_annotation_AI(policy_id, question_id):
                 arr = q["AI_QA_result"].tolist()
                 max_cos = max(arr)
 
-                if db_column_answer is None or db_column_answer == "":
+                if obj_property is None or obj_property == "":
                     for option in q["options"]:
                         if m_cos == option["cos"]:
                             q["answers"] = option["option"]
                 else:
-                    q["answers"] = db_column_answer
+                    q["answers"] = obj_property
                     has_answer = True
 
                 if has_answer:
@@ -114,17 +114,16 @@ def get_annotation_AI(policy_id, question_id):
                             break
                 q["has_answer"] = has_answer
             elif q["taskType"] == 2:
-                topN, graph_list = tmp(q["columnName"], policy_id)
-                if db_column_answer is None or db_column_answer == "":
-                    # q["answers"] = multi_QA(q["question"], context)
+                if obj_property is None or obj_property == "":
+                    q["answers"] = multi_QA(q["question"], context)
                     # annotation_progress[policy_id][q["id"]] = False
-                    q["answers"] = topN
                 else:
-                    q["answers"] = db_column_answer
+                    q["answers"] = obj_property
                     has_answer = True
                     # annotation_progress[policy_id][q["id"]] = True
                 q["has_answer"] = has_answer
-            questions.append(q)
+                graph_list = tmp(policy_id)
+            qqqqq.append(q)
             break
 
     summary_list = get_policy_obj(policy.original_text)
@@ -132,7 +131,7 @@ def get_annotation_AI(policy_id, question_id):
     a, b = get_annotation_progress(policy_id, q_objs)
     return render_template('annotation.html',
                            policy=policy,
-                           questions=questions,
+                           questions=qqqqq,
                            summary_list=summary_list,
                            graph_list=graph_list,
                            annotation_progress=annotation_progress[policy_id],
@@ -212,6 +211,33 @@ def get_annotation_manual(policy_id, question_id):
                            total=b,
                            pre=question_id - 1,
                            next=question_id + 1)
+
+
+def tmp(policy_id):
+    policy_original_text = CoronaNet.query.filter_by(policy_id=policy_id).first().__dict__
+    policy_graphs = policy_original_text["original_text"]
+    policy_graphs = policy_graphs.replace('\n\n', '\n').split('\n')
+
+    g_id = 0  # the index of a graph
+    g_dic = {}
+    for g in policy_graphs:
+        sep = '.'
+        sentences = [x + sep for x in g.split(sep)]
+        try:
+            sentences.remove('.')
+        except:
+            pass
+
+        s_id = 0  # the index of a sentence in a graph
+        g_dic[g_id] = []
+
+        for s in sentences:
+            s.replace("..", ".")
+            g_dic[g_id].append({"sentence_id": s_id, "sentence": s, "score": 0})
+            s_id = s_id + 1
+        g_id = g_id + 1
+    return g_dic
+
 
 
 def get_option_text_by_qid(policy_id, question_id, option_id):

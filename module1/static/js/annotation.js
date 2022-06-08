@@ -46,92 +46,33 @@ function text_change3(btn_save_id){
     btn_save.disabled = false;
 }
 
-function highlighting(qid,answerStr) {
-    if(answerStr == ""){
+function type2_highlighting(qid,answer) {
+    if(answer == ""){
         return;
     }
 
+    document.getElementById(qid + '_answer').innerText = answer;
+
     let divs = document.getElementById("summary").children;
-    let answers = answerStr.split("|");
+    var flagnew = new RegExp(answer,"ig")
 
     for(i=0; i<divs.length; i++){
-        if(divs[i].nodeName == "DIV"){
-            divs[i].innerHTML = divs[i].innerHTML.replaceAll("<span style=\"background-color: #FFFF00\">","");
-            divs[i].innerHTML = divs[i].innerHTML.replaceAll("</span>","");
+        var divs2 = divs[i].children;
+        for(j=0; j < divs2.length; j++){
+            if(divs2[j].nodeName == "SPAN"){
+                var tmp = divs2[j].innerHTML;
 
-            let senOld = divs[i].innerHTML;
-            let senNew = senOld;
+                tmp = tmp.replaceAll("<span style=\"background-color: #FFFF00\">","");
+                tmp = tmp.replaceAll("</span>","");
 
-            for(j=0; j<answers.length; j++){
-                senNew = senNew.replaceAll(answers[j], "<span style=\"background-color: #FFFF00\">" + answers[j] + "</span>")
-            }
-
-            divs[i].innerHTML = senNew;
-        }
-    }
-}
-
-function highlighting_multichoice(policyId, questionId) {
-    // 1. get the div obj of the policy text
-    var policyNode = document.getElementById("summary");
-
-    var ele = document.getElementsByName(questionId+'_answer');
-    var optionId = "";
-
-    for(i=0; i<ele.length; i++){
-        if(ele[i].checked){
-            optionId = ele[i].id;
-        }
-    }
-
-    const xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function(){
-        if(this.readyState == 4 && this.status == 200){
-            // clean policy div
-            // read the returned policy turn it from json into object
-            //
-            var json = xhttp.responseText;
-            var obj = JSON.parse(json);
-            policyNode.innerHTML = "";
-
-            for (const [key, graphs] of Object.entries(obj)) {
-                var div = document.createElement("div");
-                for (const g of Object.entries(graphs)) {
-                    var sen = g[1];
-                    var sentence = sen["sentence"];
-                    var score = parseFloat(sen["score"].substring(0,3));
-
-                    // 3. generate a span obj and add it to the end of div
-                    var span = document.createElement("span");
-                    span.innerHTML = sentence;
-                    // 4. if score >= 0.8
-                    // 5. if socre >= 0.7
-                    // 6. if socre >= 0.5
-                    // 7. if socre < 0.5
-                    if(score>=0.9){
-                        span.style.backgroundColor = '#37ff00';
-                    }else if(score>=0.8 && score<0.9){
-                        span.style.backgroundColor = '#a0ff6e';
-                    }else if(score>=0.7 && score <0.8){
-                        span.style.backgroundColor = '#ffee04';
-                    }else if(score>=0.6 && score <0.7){
-                        span.style.backgroundColor = '#fff833';
-                    }else if(score>=0.5 && score <0.6){
-                        span.style.backgroundColor = '#fcf68f';
-                    }else if(score>=0.4 && score <0.5){
-                        span.style.backgroundColor = '#fdfcc4';
-                    }else {
-
-                    }
-                    div.appendChild(span);
+                var found = tmp.match(flagnew);
+                if (found !== null && found.length > 0){
+                    tmp = tmp.replace(flagnew, "<span style=\"background-color: #FFFF00\">" + found[0] + "</span>");
                 }
-                policyNode.append(div);
-                policyNode.append(document.createElement("br"));
+                divs2[j].innerHTML = tmp;
             }
         }
-    };
-    xhttp.open("POST", "/policies/highlighting");
-    xhttp.send(policyId + "------" + questionId + "------" + optionId);
+    }
 }
 
 function show_hide_highlighting_multichoice(me, policyId, questionId) {
