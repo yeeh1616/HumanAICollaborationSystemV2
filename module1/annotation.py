@@ -114,16 +114,12 @@ def get_annotation_AI(policy_id, question_id):
                             break
                 q["has_answer"] = has_answer
             elif q["taskType"] == 2:
-                topN, graph_list = tmp(q["columnName"], policy_id)
+                q["answers"], graph_list = tmp(q["columnName"], policy_id)
                 if db_column_answer is None or db_column_answer == "":
-                    # q["answers"] = multi_QA(q["question"], context)
-                    # annotation_progress[policy_id][q["id"]] = False
-                    q["answers"] = topN
+                    q["has_answer"] = False
                 else:
-                    q["answers"] = db_column_answer
-                    has_answer = True
-                    # annotation_progress[policy_id][q["id"]] = True
-                q["has_answer"] = has_answer
+                    q["has_answer"] = True
+                    q["AI_answer"] = db_column_answer
             questions.append(q)
             break
 
@@ -280,7 +276,7 @@ def save2():
     pid = int(data["pid"])
     qid = data["qid"]
     annotation_progress[pid][qid] = True
-    a, b = get_annotation_progress(pid)
+    a, b = get_annotation_progress(pid, q_objs)
     return json.dumps({'success': True, 'complete': a, 'total': b}), 200, {'ContentType': 'application/json'}
 
 

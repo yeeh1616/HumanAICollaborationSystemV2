@@ -99,7 +99,10 @@
                                 {% endfor %}
                             </div>
                             <textarea id="{{ q['id'] }}_answer" name="{{ q['id'] }}_answer"
-                                      onkeyup="text_change3('btn_save_{{ q['id'] }}')" style="width: 867px; height: 122px;">{{ q["answers"][0][0] }}</textarea>
+                                      onkeyup="text_change3('btn_save_{{ q['id'] }}')"
+                                      style="width: 867px;
+                                      height: 122px;"
+                            >{% if q['has_answer'] %}{{ q["AI_answer"] }}{% else %}{{ q["answers"][0][0] }}{% endif %}</textarea>
                             <br><br>
                             <div>
                                 {% if q['has_answer'] %}
@@ -113,8 +116,6 @@
                                         Save
                                     </button>
                                 {% endif %}
-                                <button onclick="hide_highlighting('{{ q['id'] }}', '{{ q['answers'] }}')">Hide Highlighting
-                                </button>
                             </div>
 
                             <br><br><br>

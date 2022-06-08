@@ -154,9 +154,8 @@ function save1(btn, qid, pid, column) {
 }
 
 function save2(btn, qid, pid, column) {
-    var answerId = qid + "_answer";
-    var label = document.getElementById(qid + "_label");
-    var answer = document.getElementById(answerId).value;
+    var qqid = qid + '_answer';
+    var answer = document.getElementById(qid + '_answer').innerHTML;
     var parmas = '{"pid":"' + pid + '","qid":"' + qid + '","answer":"' + answer + '","column":"' + column + '"}';
 
     const xhttp = new XMLHttpRequest();
