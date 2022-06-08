@@ -98,6 +98,7 @@ def get_annotation_AI(policy_id, question_id):
                             option["checked"] = "True"
                             option["type"] = 1
                             break
+                    graph_list = get_highlight_sentences_obj(policy_id, q["answers"])
                 else:
                     # annotation_progress[policy_id][q["id"]] = False
                     for i in range(0, len(q["AI_QA_result"])):
@@ -220,8 +221,8 @@ def get_option_text_by_qid(policy_id, question_id, option_id):
                     return option["option"], option["note"]
 
 
-@bp_annotation.route("/policies/save", methods=['POST'])
-def save():
+@bp_annotation.route("/policies/<int:q_type>/save", methods=['POST'])
+def save(q_type):
     dataJson = request.data.decode("utf-8")
     data = json.loads(dataJson)
 
@@ -237,13 +238,18 @@ def save():
 
     for q in q_objs:
         if q["columnName"] == data['column']:
-            for op in q["options"]:
-                if '[Text entry]' in op['option'] and '[Text entry]' in data['answer']:
-                    op['checked'] = "True"
-                elif op['option'] == data['answer']:
-                    op['checked'] = "True"
-                else:
-                    op['checked'] = "False"
+            if q_type == 1:
+                for op in q["options"]:
+                    if '[Text entry]' in op['option'] and '[Text entry]' in data['answer']:
+                        op['checked'] = "True"
+                    elif op['option'] == data['answer']:
+                        op['checked'] = "True"
+                    else:
+                        op['checked'] = "False"
+            else:
+                if q["columnName"] == data['column']:
+                    q["answers"] = data['answer']
+                    q["has_answer"] = True
 
     pid = int(data["pid"])
     qid = int(data["qid"])
@@ -271,10 +277,9 @@ def save2():
         if q["columnName"] == data['column']:
             q["answers"] = data['answer']
             q["has_answer"] = True
-            pass
 
     pid = int(data["pid"])
-    qid = data["qid"]
+    qid = int(data["qid"])
     annotation_progress[pid][qid] = True
     a, b = get_annotation_progress(pid, q_objs)
     return json.dumps({'success': True, 'complete': a, 'total': b}), 200, {'ContentType': 'application/json'}
@@ -398,10 +403,11 @@ def multi_choice_QA(policy, options_list):
     # sentence_embeddings.shape
 
     # let's calculate cosine similarity for sentence 0:
-    return cosine_similarity(
+    res = cosine_similarity(
         [sentence_embeddings[0]],
         sentence_embeddings[1:]
     )
+    return res
 
 
 def get_policy_obj(policy):

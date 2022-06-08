@@ -73,6 +73,8 @@ function type2_highlighting(qid,answer) {
             }
         }
     }
+
+    document.getElementById('btn_save_' + qid).disabled=false;
 }
 
 function show_hide_highlighting_multichoice(me, policyId, questionId) {
@@ -147,14 +149,14 @@ function save1(btn, qid, pid, column) {
                     btn.disabled=true;
                 }
             };
-            xhttp.open("POST", "/policies/save");
+            xhttp.open("POST", "/policies/1/save");
             xhttp.send(parmas);
+            break;
         }
     }
 }
 
 function save2(btn, qid, pid, column) {
-    var qqid = qid + '_answer';
     var answer = document.getElementById(qid + '_answer').innerHTML;
     var parmas = '{"pid":"' + pid + '","qid":"' + qid + '","answer":"' + answer + '","column":"' + column + '"}';
 
@@ -173,28 +175,6 @@ function save2(btn, qid, pid, column) {
             btn.disabled=true;
         }
     };
-    xhttp.open("POST", "/policies/save2");
+    xhttp.open("POST", "/policies/2/save");
     xhttp.send(parmas);
-}
-
-function save3(btn, qid, pid, column) {
-    var answerName = qid + "_answer";
-    var options = document.getElementById(answerName);
-    var label = document.getElementById(qid + "_label");
-
-    for(i = 0; i < options.length; i++) {
-        if(options[i].checked) {
-            var parmas = '{"pid":"' + pid + '","qid":"' + qid + '","answer":"' + options[i].value + '","column":"' + column + '"}';
-
-            const xhttp = new XMLHttpRequest();
-            xhttp.onreadystatechange = function() {
-                if (this.readyState == 4 && this.status == 200) {
-                    btn.disabled=true;
-                }
-            };
-            xhttp.open("POST", "/policies/save");
-            xhttp.send(parmas);
-            break;
-        }
-    }
 }
