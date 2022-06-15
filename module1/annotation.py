@@ -196,13 +196,13 @@ def get_annotation_manual(policy_id, question_id):
             qqqqq.append(q)
             break
 
-    summary_list = get_policy_obj(policy.description)
+    # summary_list = get_policy_obj(policy.description)
     graph_list = get_policy_obj(policy.original_text)
     a, b = get_annotation_progress(policy_id, q_objs)
     return render_template('annotation_manual.html',
                            policy=policy,
                            questions=qqqqq,
-                           summary_list=summary_list,
+                           summary_list=[],
                            graph_list=graph_list,
                            annotation_progress=annotation_progress[policy_id],
                            complete=a,

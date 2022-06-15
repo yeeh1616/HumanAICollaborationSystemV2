@@ -10,13 +10,12 @@
     <div class="column">
         <div class="column">
             <button><a href="{{ url_for('summary.get_summary', policy_id=policy.policy_id) }}">Back</a></button>
-            <h1>Annotation tasks</h1>
+            <h1>Question {{questions[0]['id']}}</h1>
             <div>
                 <div class="ex1">
                 {% for q in questions %}
                     <div id="{{ q['id'] }}">
                         {% if q['taskType'] == 1 and q["selected"] %}
-                            <h2>{{ q['id'] }}：</h2>
                             <h2>{{ q['columnName'] }}</h2>
                             <p>Question: {{ q['question'] }}</p>
                             <p>Clarification: {{ q['clarification'] }}</p>
@@ -90,18 +89,17 @@
                             <br><br><br>
                         {% endif %}
                     </div>
-
-                    <div>
-                        {% if pre > 0 %}
-                            <a href="{{ url_for('annotation.get_annotation', policy_id=policy.policy_id, question_id=pre) }}">Previous</a>
-                        {% endif %}
-
-                        {% if next <= total %}
-                            <a href="{{ url_for('annotation.get_annotation', policy_id=policy.policy_id, question_id=next) }}">Next</a>
-                        {% endif %}
-                    </div>
                 {% endfor %}
             </div>
+                <div>
+                    {% if pre > 0 %}
+                        <a href="{{ url_for('annotation.get_annotation', policy_id=policy.policy_id, question_id=pre) }}">Previous</a>
+                    {% endif %}
+
+                    {% if next <= total %}
+                        <a href="{{ url_for('annotation.get_annotation', policy_id=policy.policy_id, question_id=next) }}">Next</a>
+                    {% endif %}
+                </div>
                 <div style="height: 200px">
                     <main class="grid">
                     <div id="complete">Complete: {{ complete }}/{{ total }}</div>
