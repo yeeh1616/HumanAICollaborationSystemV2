@@ -11,17 +11,37 @@
         <div class="column">
         <h2>Summary</h2>
             <textarea id="w3review" name="w3review" rows="20" cols="120" onkeyup ="summary_change()" style="width: 880px">{{ policy.description }}</textarea>
+
         </div>
+        <div style="height: 200px">
+            <main class="grid">
+            <div id="complete">Complete: {{ complete }}/{{ total }}</div>
+                {% for k in annotation_progress %}
+                    {% if annotation_progress[k] %}
+                        <div class="box1" id="ap_{{ k }}">
+                            {{ k }}
+                        </div>
+                    {% else %}
+                        <div class="box2" id="ap_{{ k }}">
+                            {{ k }}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </main>
+        </div>
+
+
+
         <div class="column">
             <h2>Original Policy(Policy Id: {{ policy.policy_id }})</h2>
             <div class="ex2" id="summary">
                 {% for items in policy.highlighted_text %}
-                    {% if items[1] %}
-<span style="background-color: #FFFF00"> {{ items[0] }} </span>
-                    {% else %} {{ items[0] }} {% endif %}
+                    {% if items[1] %}<span style="background-color: #FFFF00"> {{ items[0] }} </span>{% else %} {{ items[0] }} {% endif %}
                 {% endfor %}
             </div>
         </div>
+
+
     </div>
 
     {% if has_summary %}
@@ -30,11 +50,12 @@
         <button id="save_summary" class="btn btn-outline-primary" onclick="save_summary('{{ policy.policy_id }}', true)">Save</button>
     {% endif %}
 
+    {% if next <= total %}
+        <a href="{{ url_for('main.get_summary', policy_id=policy.policy_id, question_id=next) }}">Next</a>
+    {% endif %}
+
     <div id="divSummaryText" style="display: none;">
         {{ policy.description }}
     </div>
-
-    <button id="btn_reload" onclick="reload_summary('{{ policy.policy_id }}')">Reload Summary</button>
-    <button id="next" onclick="goToAnnoation('{{ policy.policy_id }}', '{{ url_for('annotation.get_annotation', policy_id=policy.policy_id, question_id=1) }}')">Go to annotation</button>
 </body>
 </html>

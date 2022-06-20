@@ -37,6 +37,9 @@ def create_app():
     db.init_app(app)
     bcrypt.init_app(app)
 
+    from .main import bp_main as main_blueprint
+    app.register_blueprint(main_blueprint)
+
     # login_manager = LoginManager()
     # login_manager.init_app(app)
     # login_manager.login_view = 'auth.login'
@@ -52,7 +55,7 @@ def create_app():
     #
     # from .policies import bp_policies as policies_blueprint
     # app.register_blueprint(policies_blueprint)
-
+    #
     from .summary import bp_summary as summary_blueprint
     app.register_blueprint(summary_blueprint)
 

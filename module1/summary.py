@@ -82,7 +82,8 @@ def get_summary_AI(policy_id):
         has_summary = True
         policy.description
     policy.highlighted_text = highlighted
-    return render_template('summary.html', policy=policy, has_summary=has_summary)
+    # return render_template('summary.html', policy=policy, has_summary=has_summary)
+    return policy, has_summary
 
 
 @bp_summary.route("/policies/save_summary", methods=['POST'])

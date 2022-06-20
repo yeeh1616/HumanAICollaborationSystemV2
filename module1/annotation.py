@@ -2,7 +2,9 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from flask import Blueprint, render_template
 
+from module1.global_variable import annotation_progress, q_cache
 from module1.helper import setValue, getValue, preprocess, tmp
+# from module1.main import annotation_progress
 from module1.models import CoronaNet
 from nltk.corpus import stopwords
 from flask import request
@@ -16,14 +18,14 @@ import re
 
 bp_annotation = Blueprint('annotation', __name__)
 
-q_cache = {}  # policy's json object cache
-p_cache = {}  # policy's text cache
+# q_cache = {}  # policy's json object cache
+# p_cache = {}  # policy's text cache
 
 '''
 record how many questions have been saved, key is policy_id, value is a 2-d array
 
 '''
-annotation_progress = {}
+# annotation_progress = {}
 
 
 @bp_annotation.route("/annotation/<int:policy_id>/<int:question_id>", methods=['GET', 'POST'])
@@ -37,8 +39,85 @@ def get_annotation(policy_id, question_id):
         return get_annotation_AI(policy_id, question_id)
 
 
+def get_selection_AI(policy_id, question_id, q):
+    policy = CoronaNet.query.filter_by(policy_id=policy_id).first()
+    db_column_name = q["columnName"]
+    db_column_answer = getattr(policy, db_column_name)
+    has_answer = False
+
+    options_list = []
+    for option in q["options"]:
+        if not option["isTextEntry"]:
+            options_list.append(option["option"] if option["note"] == "" else option["note"])
+    q["AI_QA_result"] = multi_choice_QA(policy.original_text, options_list)[0]
+    m_cos = 0
+    arr = q["AI_QA_result"].tolist()
+    max_cos = max(arr)
+
+    if db_column_answer is None or db_column_answer == "":
+        for option in q["options"]:
+            if m_cos == option["cos"]:
+                q["answers"] = option["option"]
+    else:
+        q["answers"] = db_column_answer
+        has_answer = True
+
+    if has_answer:
+        # a = annotation_progress[policy_id]
+        # a[q["id"]] = True
+        for i in range(0, len(q["AI_QA_result"])):
+            q["options"][i]["cos"] = q["AI_QA_result"][i]
+        for option in q["options"]:
+            if option["cos"] == max_cos:
+                option["type"] = 2
+                break
+        for option in q["options"]:
+            if "[Text entry]" in option["option"] and "[Text entry]" in q["answers"]:
+                option["checked"] = "True"
+                option["type"] = 1
+                q["answers"] = q["answers"].split("|")[0]
+                break
+            elif option["option"] == q["answers"]:
+                option["checked"] = "True"
+                option["type"] = 1
+                break
+        graph_list = get_highlight_sentences_obj(policy_id, q["answers"])
+    else:
+        # annotation_progress[policy_id][q["id"]] = False
+        for i in range(0, len(q["AI_QA_result"])):
+            # q["options"][i]["cos"] = round(q["AI_QA_result"][i])
+            q["options"][i]["cos"] = q["AI_QA_result"][i]
+            if q["AI_QA_result"][i] == max_cos:
+                q["options"][i]["checked"] = "True"
+
+        for option in q["options"]:
+            if option["cos"] == max_cos:
+                option["checked"] = "True"
+                option["type"] = 2
+                graph_list = get_highlighting_text_base_obj(policy_id, question_id, option["id"])
+                break
+    q["has_answer"] = has_answer
+
+    summary_list = get_policy_obj(policy.original_text)
+    return policy, summary_list, graph_list
+
+
+def get_completation_AI(policy_id, question_id, q):
+    policy = CoronaNet.query.filter_by(policy_id=policy_id).first()
+    db_column_name = q["columnName"]
+    db_column_answer = getattr(policy, db_column_name)
+    q["answers"], graph_list = tmp(q["columnName"], policy_id)
+    if db_column_answer is None or db_column_answer == "":
+        q["has_answer"] = False
+    else:
+        q["has_answer"] = True
+        q["AI_answer"] = db_column_answer
+
+    summary_list = get_policy_obj(policy.original_text)
+    return policy, summary_list, graph_list
+
 def get_annotation_AI(policy_id, question_id):
-    global q_cache
+    # global q_cache
     # global annotation_progress
 
     if policy_id not in q_cache.keys():
@@ -140,7 +219,7 @@ def get_annotation_AI(policy_id, question_id):
 
 
 def get_annotation_manual(policy_id, question_id):
-    global q_cache
+    # global q_cache
 
     if policy_id not in q_cache.keys():
         with open('./module1/static/questions.json', encoding="utf8") as f:
@@ -153,7 +232,7 @@ def get_annotation_manual(policy_id, question_id):
     policy = CoronaNet.query.filter_by(policy_id=policy_id).first()
     has_answer = False
 
-    qqqqq = []
+    # qqqqq = []
 
     for q in q_objs:
         db_column_name = q["columnName"]
@@ -193,7 +272,7 @@ def get_annotation_manual(policy_id, question_id):
                     q["answers"] = obj_property
                     has_answer = True
                 q["has_answer"] = has_answer
-            qqqqq.append(q)
+            # qqqqq.append(q)
             break
 
     # summary_list = get_policy_obj(policy.description)
@@ -201,7 +280,7 @@ def get_annotation_manual(policy_id, question_id):
     a, b = get_annotation_progress(policy_id, q_objs)
     return render_template('annotation_manual.html',
                            policy=policy,
-                           questions=qqqqq,
+                           question_id=question_id,
                            summary_list=[],
                            graph_list=graph_list,
                            annotation_progress=annotation_progress[policy_id],
@@ -232,8 +311,8 @@ def save(q_type):
     db.session.commit()
 
     # clear the cache
-    global q_cache
-    global annotation_progress
+    # global q_cache
+    # global annotation_progress
     q_objs = q_cache[int(data["pid"])]
 
     for q in q_objs:
@@ -269,8 +348,8 @@ def save2():
     db.session.commit()
 
     # clear the cache
-    global q_cache
-    global annotation_progress
+    # global q_cache
+    # global annotation_progress
     q_objs = q_cache[int(data["pid"])]
 
     for q in q_objs:
@@ -490,7 +569,7 @@ def view(policy_id):
 
 
 def get_annotation_progress(pid, q_objs):
-    global annotation_progress
+    # global annotation_progress
 
     policy = CoronaNet.query.filter_by(policy_id=pid).first()
     for q in q_objs:

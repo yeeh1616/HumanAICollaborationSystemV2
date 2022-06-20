@@ -1,6 +1,17 @@
 [
     {
         "id": 1,
+        "columnName": "description",
+        "question": "Please fill in a short description of the policy on the right side. It should include when and who did what policy. For example: On Apr. 18, 2020, the United Kingdom government has warned against unapproved antibody tests for COVID-19.",
+        "answers": "",
+        "has_answer": false,
+        "clarification": "",
+        "isPrimaryKey": "False",
+        "taskType": 0,
+        "selected": true
+    },
+    {
+        "id": 2,
         "columnName": "target_geog_level",
         "question": "Please specify which geographical or administrative entity is the target of the policy.",
         "answers": "",
@@ -23,7 +34,7 @@
         "selected": true
     },
     {
-        "id": 2,
+        "id": 3,
         "columnName": "compliance",
         "question": "What kind of enforcement does this policy have (if any)?",
         "answers": "",
@@ -43,7 +54,7 @@
         "selected": true
     },
     {
-        "id": 3,
+        "id": 4,
         "columnName": "date_start",
         "question": "When does the policy take effect?",
         "answers": "",

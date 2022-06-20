@@ -1,0 +1,84 @@
+from nltk.tokenize import word_tokenize, sent_tokenize
+from flask import Blueprint, render_template
+
+from module1.annotation import get_selection_AI, get_annotation_progress, get_completation_AI
+from module1.global_variable import annotation_progress, q_cache
+from module1.models import CoronaNet
+from nltk.corpus import stopwords
+from flask import request
+from module1 import db, MANUAL_POLICY_ID
+
+import json
+
+from module1.summary import get_summary_manual, get_summary_AI
+
+bp_main = Blueprint('main', __name__)
+
+
+@bp_main.route("/main/<int:policy_id>", methods=['GET', 'POST'])
+@bp_main.route("/main/<int:policy_id>/<int:question_id>", methods=['GET', 'POST'])
+def get_summary(policy_id, question_id=1):
+    if policy_id < 1 or policy_id > MANUAL_POLICY_ID * 2:
+        return "Policy {} is not found.".format(policy_id)
+
+    q, q_objs = get_question(policy_id, question_id)
+
+    if q["taskType"] == 0:
+        if policy_id < MANUAL_POLICY_ID:
+            return get_summary_AI(policy_id)
+        else:
+            policy, has_summary = get_summary_AI(policy_id)
+            complete, total = get_annotation_progress(policy_id, q_objs)
+            return render_template('summary.html',
+                                    policy=policy,
+                                    has_summary=has_summary,
+                                    complete=complete,
+                                    total=total,
+                                    pre=question_id - 1,
+                                    next=question_id + 1)
+    elif q["taskType"] == 1:
+        policy, summary_list, graph_list = get_selection_AI(policy_id, question_id, q)
+        complete, total = get_annotation_progress(policy_id, q_objs)
+        return render_template('annotation.html',
+                               policy=policy,
+                               q=q,
+                               summary_list=summary_list,
+                               graph_list=graph_list,
+                               annotation_progress=annotation_progress[policy_id],
+                               complete=complete,
+                               total=total,
+                               pre=question_id - 1,
+                               next=question_id + 1)
+    elif q["taskType"] == 2:
+        policy, summary_list, graph_list = get_completation_AI(policy_id, question_id, q)
+        complete, total = get_annotation_progress(policy_id, q_objs)
+        return render_template('annotation.html',
+                               policy=policy,
+                               q=q,
+                               summary_list=summary_list,
+                               graph_list=graph_list,
+                               annotation_progress=annotation_progress[policy_id],
+                               complete=complete,
+                               total=total,
+                               pre=question_id - 1,
+                               next=question_id + 1)
+
+    return "Error: unknown task type."
+
+
+def get_question(policy_id, question_id):
+    # global q_cache
+
+    if policy_id not in q_cache.keys():
+        with open('./module1/static/questions.json', encoding="utf8") as f:
+            q_objs = json.load(f)
+            q_cache[policy_id] = q_objs
+        annotation_progress[policy_id] = {}
+    else:
+        q_objs = q_cache[policy_id]
+
+    for q in q_objs:
+        if q['id'] == question_id:
+            return q, q_objs
+
+    return None, None
