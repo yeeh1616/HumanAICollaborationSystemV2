@@ -469,8 +469,24 @@ def consine_cal(v1, v2):
 
 @bp_annotation.route("/policies/<int:policy_id>/view", methods=['GET', 'POST'])
 def view(policy_id):
-    policy = CoronaNet.query.filter_by(policy_id=policy_id).first().__dict__
-    return render_template('view.html', policy=policy)
+    policy_tmp = CoronaNet.query.filter_by(policy_id=policy_id).first().__dict__
+
+    policy = {}
+    policy['description'] = policy_tmp['description']
+    policy['target_geog_level'] = policy_tmp['target_geog_level']
+    policy['compliance'] = policy_tmp['compliance']
+    policy['date_start'] = policy_tmp['date_start']
+
+    cnt = 0
+    for k in policy:
+        if policy[k] is not None:
+            cnt = cnt + 1
+
+    ending = ''
+    if cnt == 4:
+        ending = 'You have done all the tasks! Thanks!'
+
+    return render_template('view.html', policy=policy, policy_id=policy_tmp['policy_id'], ending=ending)
 
 
 def get_annotation_progress(pid, q_objs):

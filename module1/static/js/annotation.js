@@ -157,7 +157,8 @@ function save1(btn, qid, pid, column) {
 }
 
 function save2(btn, qid, pid, column) {
-    var answer = document.getElementById(qid + '_answer').innerHTML;
+    var answer_obj = document.getElementById(qid + '_answer');
+    var answer = answer_obj.value;
     var parmas = '{"pid":"' + pid + '","qid":"' + qid + '","answer":"' + answer + '","column":"' + column + '"}';
 
     const xhttp = new XMLHttpRequest();
