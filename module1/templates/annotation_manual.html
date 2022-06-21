@@ -4,7 +4,7 @@
     <link rel="stylesheet" href="../../static/css/annotation.css">
     <script src="../../static/js/annotation.js"></script>
 </head>
-<body>
+<body style="overflow-y: hidden;">
 
 <div class="row">
     <div class="column">
@@ -15,12 +15,12 @@
                 <div class="ex1">
                 <div id="{{ q['id'] }}">
                     {% if q['taskType'] == 1 and q["selected"] %}
-                        <h2>{{ q['columnName'] }}</h2>
+                        <h2>Task name: {{ q['columnName'] }}</h2>
                         <p>Question: {{ q['question'] }}</p>
                         <p>Clarification: {{ q['clarification'] }}</p>
                         <input type="hidden" id="{{ q['id'] }}_answer" value="{{ q['answers'] }}">
 
-                        <div id="{{ q['id'] }}_op">
+                        <div id="{{ q['id'] }}_op" style="border-style: dashed;">
                             {% for option in q["options"] %}
                                 {% if option['checked'] == "True" %}
                                     <input id="{{ option['id'] }}" type="radio" name="{{ q['id'] }}_answer"
@@ -63,8 +63,7 @@
                         </div>
                         <br><br><br>
                     {% elif q['taskType'] == 2 and q["selected"] %}
-                        <h2>{{ q['id'] }}：</h2>
-                        <h2>{{ q['columnName'] }}</h2>
+                        <h2>Task name: {{ q['columnName'] }}</h2>
                         <p>Question: {{ q['question'] }}</p>
                         <p>Clarification: {{ q['clarification'] }}</p>
                         <textarea id="{{ q['id'] }}_answer" name="{{ q['id'] }}_answer"
@@ -90,13 +89,14 @@
             </div>
                 <div>
                     {% if pre > 0 %}
-                        <a href="{{ url_for('main.get_summary', policy_id=policy.policy_id, question_id=pre) }}">Previous</a>
+                        <button><a href="{{ url_for('main.get_summary', policy_id=policy.policy_id, question_id=pre) }}">Previous</a></button>
                     {% endif %}
 
                     {% if next <= total %}
-                        <a href="{{ url_for('main.get_summary', policy_id=policy.policy_id, question_id=next) }}">Next</a>
+                        <button><a href="{{ url_for('main.get_summary', policy_id=policy.policy_id, question_id=next) }}">Next</a></button>
                     {% endif %}
                 </div>
+
                 <div style="height: 200px">
                     <main class="grid">
                     <div id="complete">Complete: {{ complete }}/{{ total }}</div>
@@ -133,6 +133,8 @@
         </div>
     </div>
 </div>
+{% if q['id'] == 4 and complete == 4 %}
 <button><a href="{{ url_for('annotation.view', policy_id=policy.policy_id) }}">Results</a></button>
+{% endif %}
 </body>
 </html>

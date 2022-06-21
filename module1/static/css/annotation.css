@@ -71,9 +71,10 @@ tr:nth-child(even) {
 div.ex1 {
     font-size: 18px;
     background-color: white;
-    height: 600px;
+    height: 700px;
     width: 900px;
-    overflow-y: scroll;
+    overflow-y: hidden;
+    border-style: groove;
 }
 
 div.ex2 {

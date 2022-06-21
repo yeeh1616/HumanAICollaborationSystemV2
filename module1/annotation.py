@@ -576,12 +576,7 @@ def get_annotation_progress(pid, q_objs):
         obj_property = getValue(policy, q["columnName"])
         qid = q["id"]
 
-        if q["taskType"] == 1:
-            if obj_property is None or obj_property == "":
-                annotation_progress[pid][qid] = False
-            else:
-                annotation_progress[pid][qid] = True
-        elif q["taskType"] == 2:
+        if q["taskType"] == 0 or q["taskType"] == 1 or q["taskType"] == 2:
             if obj_property is None or obj_property == "":
                 annotation_progress[pid][qid] = False
             else:

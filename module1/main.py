@@ -2,12 +2,14 @@ from nltk.tokenize import word_tokenize, sent_tokenize
 from flask import Blueprint, render_template
 
 from module1.annotation import get_selection_AI, get_annotation_progress, get_completation_AI
+from module1.dao import upate_loading_time
 from module1.global_variable import annotation_progress, q_cache
 from module1.models import CoronaNet
 from nltk.corpus import stopwords
 from flask import request
 from module1 import db, MANUAL_POLICY_ID
 
+import time
 import json
 
 from module1.summary import get_summary_manual, get_summary_AI
@@ -18,10 +20,14 @@ bp_main = Blueprint('main', __name__)
 @bp_main.route("/main/<int:policy_id>", methods=['GET', 'POST'])
 @bp_main.route("/main/<int:policy_id>/<int:question_id>", methods=['GET', 'POST'])
 def get_summary(policy_id, question_id=1):
+    tic = time.perf_counter()
+
     if policy_id < 1 or policy_id > MANUAL_POLICY_ID * 2:
         return "Policy {} is not found.".format(policy_id)
 
     q, q_objs = get_question(policy_id, question_id)
+
+    res = "Error: unknown task type."
 
     if q["taskType"] == 0:
         if policy_id < MANUAL_POLICY_ID:
@@ -29,9 +35,10 @@ def get_summary(policy_id, question_id=1):
         else:
             policy, has_summary = get_summary_AI(policy_id)
             complete, total = get_annotation_progress(policy_id, q_objs)
-            return render_template('summary.html',
+            res = render_template('summary.html',
                                     policy=policy,
                                     has_summary=has_summary,
+                                    annotation_progress=annotation_progress[policy_id],
                                     complete=complete,
                                     total=total,
                                     pre=question_id - 1,
@@ -39,7 +46,7 @@ def get_summary(policy_id, question_id=1):
     elif q["taskType"] == 1:
         policy, summary_list, graph_list = get_selection_AI(policy_id, question_id, q)
         complete, total = get_annotation_progress(policy_id, q_objs)
-        return render_template('annotation.html',
+        res = render_template('annotation.html',
                                policy=policy,
                                q=q,
                                summary_list=summary_list,
@@ -52,7 +59,7 @@ def get_summary(policy_id, question_id=1):
     elif q["taskType"] == 2:
         policy, summary_list, graph_list = get_completation_AI(policy_id, question_id, q)
         complete, total = get_annotation_progress(policy_id, q_objs)
-        return render_template('annotation.html',
+        res = render_template('annotation.html',
                                policy=policy,
                                q=q,
                                summary_list=summary_list,
@@ -62,8 +69,10 @@ def get_summary(policy_id, question_id=1):
                                total=total,
                                pre=question_id - 1,
                                next=question_id + 1)
-
-    return "Error: unknown task type."
+    toc = time.perf_counter()
+    upate_loading_time(policy_id, int(toc - tic))
+    print(f"Downloaded the tutorial in {toc - tic:0.4f} seconds")
+    return res
 
 
 def get_question(policy_id, question_id):

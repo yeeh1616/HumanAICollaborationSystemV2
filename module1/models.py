@@ -53,6 +53,7 @@ class CoronaNet(db.Model):
     recorded_date = db.Column(db.Text, nullable=False)
     original_text = db.Column(db.Text, nullable=False)
     status = db.Column(db.Integer, nullable=False)
+    loading_time = db.Column(db.Integer, nullable=False)
     highlighted_text = []
 
     def get_status(self):
