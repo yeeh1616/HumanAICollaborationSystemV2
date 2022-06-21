@@ -1,5 +1,8 @@
 from nltk.tokenize import word_tokenize, sent_tokenize
 from flask import Blueprint, render_template
+
+from module1.global_variable import q_cache, annotation_progress
+from module1.helper import get_annotation_progress
 from module1.models import CoronaNet
 from nltk.corpus import stopwords
 from flask import request
@@ -86,18 +89,28 @@ def get_summary_AI(policy_id):
     return policy, has_summary
 
 
-@bp_summary.route("/policies/save_summary", methods=['POST'])
-def save_summary():
+@bp_summary.route("/policies/<int:q_type>/save_summary", methods=['POST'])
+def save_summary(q_type):
     data = request.data.decode("utf-8").split("------")
-    policy_id = data[0]
+    pid = int(data[0])
     summary = data[1]
 
-    policy = db.session.query(CoronaNet).filter_by(policy_id=policy_id).first()
+    policy = db.session.query(CoronaNet).filter_by(policy_id=pid).first()
     policy.description = summary
 
     db.session.commit()
 
-    return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
+    q_objs = q_cache[pid]
+
+    for q in q_objs:
+        if q["taskType"] == 0:
+            q["answers"] = summary
+            q["has_answer"] = True
+            break
+    qid = 1
+    annotation_progress[pid][qid] = True
+    a, b = get_annotation_progress(pid, q_objs)
+    return json.dumps({'success': True, 'complete': a, 'total': b}), 200, {'ContentType': 'application/json'}
 
 
 @bp_summary.route("/policies/get_highlighting_text", methods=['GET', 'POST'])

@@ -3,7 +3,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from flask import Blueprint, render_template
 
 from module1.global_variable import annotation_progress, q_cache
-from module1.helper import setValue, getValue, preprocess, tmp
+from module1.helper import setValue, getValue, preprocess, tmp, get_annotation_progress
 # from module1.main import annotation_progress
 from module1.models import CoronaNet
 from nltk.corpus import stopwords
@@ -568,23 +568,4 @@ def view(policy_id):
     return render_template('view.html', policy=policy, policy_id=policy_tmp['policy_id'], ending=ending)
 
 
-def get_annotation_progress(pid, q_objs):
-    # global annotation_progress
 
-    policy = CoronaNet.query.filter_by(policy_id=pid).first()
-    for q in q_objs:
-        obj_property = getValue(policy, q["columnName"])
-        qid = q["id"]
-
-        if q["taskType"] == 0 or q["taskType"] == 1 or q["taskType"] == 2:
-            if obj_property is None or obj_property == "":
-                annotation_progress[pid][qid] = False
-            else:
-                annotation_progress[pid][qid] = True
-    a = 0
-    b = len(annotation_progress[pid])
-    for k in annotation_progress[pid]:
-        if annotation_progress[pid][k]:
-            a = a + 1
-
-    return a, b

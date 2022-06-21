@@ -3,51 +3,25 @@ function save_summary(pid, f1) {
     var parmas = pid + "------" + summary;
 
     const xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function() {
+    xhttp.onreadystatechange = function () {
         if (this.readyState == 4 && this.status == 200) {
-             var btn_save = document.getElementById("save_summary");
-             var btn_next = document.getElementById("next");
-             btn_save.disabled = true;
-             btn_next.disabled = false;
+            var json = xhttp.responseText;
+            var obj = JSON.parse(json);
+            var complete = document.getElementById("complete");
+            complete.innerHTML = "Complete: " + obj["complete"] + "/" + obj["total"];
+
+            var q = document.getElementById("ap_1");
+            q.className = "box1";
+
+            var btn_save = document.getElementById("save_summary");
+            btn_save.disabled = true;
         }
     };
-    xhttp.open("POST", "/policies/save_summary");
+    xhttp.open("POST", "/policies/0/save_summary");
     xhttp.send(parmas);
 }
 
 function summary_change() {
     var btn_save = document.getElementById("save_summary");
     btn_save.disabled = false;
-}
-
-function reload_summary(pid) {
-    var des = document.getElementById("divSummaryText").innerText;
-    var btn = document.getElementById("btn_reload");
-
-    if(btn.innerHTML=="Reload Summary"){
-        const xhttp = new XMLHttpRequest();
-        xhttp.onreadystatechange = function() {
-            if (this.readyState == 4 && this.status == 200) {
-                document.getElementById("w3review").value = xhttp.responseText;
-            }
-        };
-        xhttp.open("POST", "/policies/reload_summary");
-        xhttp.send(pid);
-        btn.innerHTML="Recover Summary";
-        document.getElementById("save_summary").disabled = false;
-    }else {
-        document.getElementById("w3review").value = des;
-        btn.innerHTML="Reload Summary";
-        document.getElementById("save_summary").disabled = true;
-    }
-}
-
-function goToAnnoation(pid, url){
-    document.getElementById("w3review").disabled = true;
-    document.getElementById("save_summary").disabled = true;
-    try {
-        document.getElementById("btn_reload").disabled = true;
-    } catch (error) {}
-    save_summary(pid, true);
-    location.replace(url);
 }

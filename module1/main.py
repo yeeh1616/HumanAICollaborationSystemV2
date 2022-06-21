@@ -30,7 +30,23 @@ def get_summary(policy_id, question_id=1):
     res = "Error: unknown task type."
 
     if policy_id < MANUAL_POLICY_ID:
-        return get_summary_AI(policy_id)
+        if q["taskType"] == 0:
+            policy = CoronaNet.query.filter_by(policy_id=policy_id).first()
+            if policy.description is None:
+                policy.description = ''
+
+            complete, total = get_annotation_progress(policy_id, q_objs)
+            res = render_template('summary_manual.html',
+                                    policy=policy,
+                                    annotation_progress=annotation_progress[policy_id],
+                                    complete=complete,
+                                    total=total,
+                                    pre=question_id - 1,
+                                    next=question_id + 1)
+        # else:
+        #     if q["taskType"] == 1:
+        #         policy, summary_list, graph_list = get_selection_AI(policy_id, question_id, q)
+        #     elif q["taskType"] == 2:
     else:
         if q["taskType"] == 0:
             policy, has_summary = get_summary_AI(policy_id)
