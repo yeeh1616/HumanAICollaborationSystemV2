@@ -25,10 +25,8 @@
             </button>
             {% endif %}
 
-            {% if next <= total %}
-            <button><a href="{{ url_for('main.get_summary', policy_id=policy.policy_id, question_id=next) }}">Next</a>
+            <button><a href="{{ url_for('main.get_summary', policy_id=policy.policy_id, question_id=2) }}">Next</a>
             </button>
-            {% endif %}
             <div style="height: 200px">
                 <main class="grid">
                     <div id="complete">Complete: {{ complete }}/{{ total }}</div>

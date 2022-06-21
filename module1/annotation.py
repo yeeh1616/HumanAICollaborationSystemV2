@@ -39,6 +39,108 @@ def get_annotation(policy_id, question_id):
         return get_annotation_AI(policy_id, question_id)
 
 
+def get_selection_manual(policy_id, question_id):
+    if policy_id not in q_cache.keys():
+        with open('./module1/static/questions.json', encoding="utf8") as f:
+            q_objs = json.load(f)
+            q_cache[policy_id] = q_objs
+        annotation_progress[policy_id] = {}
+    else:
+        q_objs = q_cache[policy_id]
+
+    policy = CoronaNet.query.filter_by(policy_id=policy_id).first()
+    has_answer = False
+
+    qt = None
+    for q in q_objs:
+        db_column_name = q["columnName"]
+        obj_property = getValue(policy, db_column_name)
+
+        if q["id"] == question_id:
+            if q["taskType"] == 1:
+                qt = q
+                options_list = []
+                for option in q["options"]:
+                    if not option["isTextEntry"]:
+                        options_list.append(option["option"] if option["note"] == "" else option["note"])
+
+                if obj_property is None or obj_property == "":
+                    pass
+                else:
+                    q["answers"] = obj_property
+                    has_answer = True
+
+                if has_answer:
+                    for option in q["options"]:
+                        if "[Text entry]" in option["option"] and "[Text entry]" in q["answers"]:
+                            option["checked"] = "True"
+                            option["type"] = 1
+                            q["answers"] = q["answers"].split("|")[0]
+                            break
+                        elif option["option"] == q["answers"]:
+                            option["checked"] = "True"
+                            option["type"] = 1
+                            break
+                q["has_answer"] = has_answer
+            break
+
+    graph_list = get_policy_obj(policy.original_text)
+    a, b = get_annotation_progress(policy_id, q_objs)
+    return render_template('annotation_manual.html',
+                           policy=policy,
+                           question_id=question_id,
+                           summary_list=[],
+                           graph_list=graph_list,
+                           q=qt,
+                           annotation_progress=annotation_progress[policy_id],
+                           complete=a,
+                           total=b,
+                           pre=question_id - 1,
+                           next=question_id + 1)
+
+
+def get_completation_manual(policy_id, question_id):
+    if policy_id not in q_cache.keys():
+        with open('./module1/static/questions.json', encoding="utf8") as f:
+            q_objs = json.load(f)
+            q_cache[policy_id] = q_objs
+        annotation_progress[policy_id] = {}
+    else:
+        q_objs = q_cache[policy_id]
+
+    policy = CoronaNet.query.filter_by(policy_id=policy_id).first()
+    has_answer = False
+
+    qt = None
+    for q in q_objs:
+        db_column_name = q["columnName"]
+        obj_property = getValue(policy, db_column_name)
+
+        if q["id"] == question_id:
+            if q["taskType"] == 2:
+                qt=q
+                if obj_property is None or obj_property == "":
+                    pass
+                else:
+                    q["answers"] = obj_property
+                    has_answer = True
+                q["has_answer"] = has_answer
+            break
+
+    graph_list = get_policy_obj(policy.original_text)
+    a, b = get_annotation_progress(policy_id, q_objs)
+    return render_template('annotation_manual.html',
+                           policy=policy,
+                           question_id=question_id,
+                           summary_list=[],
+                           graph_list=graph_list,
+                           q=qt,
+                           annotation_progress=annotation_progress[policy_id],
+                           complete=a,
+                           total=b,
+                           pre=question_id - 1,
+                           next=question_id + 1)
+
 def get_selection_AI(policy_id, question_id, q):
     policy = CoronaNet.query.filter_by(policy_id=policy_id).first()
     db_column_name = q["columnName"]

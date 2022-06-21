@@ -1,7 +1,8 @@
 from nltk.tokenize import word_tokenize, sent_tokenize
 from flask import Blueprint, render_template
 
-from module1.annotation import get_selection_AI, get_annotation_progress, get_completation_AI
+from module1.annotation import get_selection_AI, get_annotation_progress, get_completation_AI, get_selection_manual, \
+    get_completation_manual
 from module1.dao import upate_loading_time
 from module1.global_variable import annotation_progress, q_cache
 from module1.models import CoronaNet
@@ -43,10 +44,11 @@ def get_summary(policy_id, question_id=1):
                                     total=total,
                                     pre=question_id - 1,
                                     next=question_id + 1)
-        # else:
-        #     if q["taskType"] == 1:
-        #         policy, summary_list, graph_list = get_selection_AI(policy_id, question_id, q)
-        #     elif q["taskType"] == 2:
+        else:
+            if q["taskType"] == 1:
+                return get_selection_manual(policy_id, question_id)
+            elif q["taskType"] == 2:
+                return get_completation_manual(policy_id, question_id)
     else:
         if q["taskType"] == 0:
             policy, has_summary = get_summary_AI(policy_id)
