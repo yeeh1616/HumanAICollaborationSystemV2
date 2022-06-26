@@ -1,13 +1,12 @@
 import re
 from gensim import utils
 from gensim.parsing import preprocess_string
+from nltk import word_tokenize
+from nltk.corpus import stopwords
 
-from module1 import stop_words, wv
+from module1 import stop_words, wv, model_name
 from module1.global_variable import annotation_progress
 from module1.models import CoronaNet
-
-
-TOP_N = 10
 
 
 def setValue(policy, columnName, answer):
@@ -319,6 +318,40 @@ def w2v_sentence(word, sentence):
     return res
 
 
+def cos_two_sentences(X, Y):
+    # tokenization
+    X_list = word_tokenize(X)
+    Y_list = word_tokenize(Y)
+
+    # sw contains the list of stopwords
+    sw = stopwords.words('english')
+    l1 = [];
+    l2 = []
+
+    # remove stop words from the string
+    X_set = {w for w in X_list if not w in sw}
+    Y_set = {w for w in Y_list if not w in sw}
+
+    # form a set containing keywords of both strings
+    rvector = X_set.union(Y_set)
+    for w in rvector:
+        if w in X_set:
+            l1.append(1)  # create a vector
+        else:
+            l1.append(0)
+        if w in Y_set:
+            l2.append(1)
+        else:
+            l2.append(0)
+    c = 0
+
+    # cosine formula
+    for i in range(len(rvector)):
+        c += l1[i] * l2[i]
+    cosine = c / float((sum(l1) * sum(l2)) ** 0.5)
+    return cosine
+
+
 def tmp(column_name, policy_id):
     policy_original_text = CoronaNet.query.filter_by(policy_id=policy_id).first().__dict__
     policy_graphs = policy_original_text["original_text"]
@@ -356,6 +389,64 @@ def tmp(column_name, policy_id):
             s_id = s_id + 1
         g_id = g_id + 1
     return topN, g_dic
+
+'''
+1. Calculate answer by QA base on q['Question'] and sentence
+2. Calculate cos of answer and q['clarification']
+'''
+def tmp2(column_name, policy_id, question, clarification):
+    policy_original_text = CoronaNet.query.filter_by(policy_id=policy_id).first().__dict__
+    policy_graphs = policy_original_text["original_text"]
+    policy_graphs = policy_graphs.replace('\n\n', '\n').split('\n')
+
+    g_id = 0  # the index of a graph
+    g_dic = {}
+
+    topN = [] # store words with score top 5
+
+    for g in policy_graphs:
+        sep = '.'
+        sentences = [x + sep for x in g.split(sep)]
+        try:
+            sentences.remove('.')
+        except:
+            pass
+
+        s_id = 0  # the index of a sentence in a graph
+        g_dic[g_id] = []
+
+        for s in sentences:
+            if len(preprocess_string(s)) == 0:
+                continue
+
+            s.replace("..", ".")
+            answer = signle_QA(question, s, model_name)
+            if answer == '':
+                continue
+            # topN_tmp = w2v_sentence(answer, clarification)
+            cos = cos_two_sentences(answer, clarification)
+            topN.append((answer, cos))
+            g_dic[g_id].append({"sentence_id": s_id, "sentence": s, "score": 0})
+            s_id = s_id + 1
+        g_id = g_id + 1
+    topN = list(set(topN))
+    topN.sort(reverse=True, key=lambda y: y[1])
+    topN = topN[:TOP_N]
+
+    return topN, g_dic
+
+
+def signle_QA(question, context, model_name):
+    from transformers import pipeline
+
+    nlp = pipeline('question-answering', model=model_name, tokenizer=model_name)
+    QA_input = {
+        'question': question,
+        'context': context
+    }
+    res = nlp(QA_input)
+
+    return res['answer']
 
 
 def get_annotation_progress(pid, q_objs):

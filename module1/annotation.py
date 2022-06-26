@@ -3,7 +3,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from flask import Blueprint, render_template
 
 from module1.global_variable import annotation_progress, q_cache
-from module1.helper import setValue, getValue, preprocess, tmp, get_annotation_progress
+from module1.helper import setValue, getValue, preprocess, tmp, get_annotation_progress, tmp2
 # from module1.main import annotation_progress
 from module1.models import CoronaNet
 from nltk.corpus import stopwords
@@ -208,7 +208,7 @@ def get_completation_AI(policy_id, question_id, q):
     policy = CoronaNet.query.filter_by(policy_id=policy_id).first()
     db_column_name = q["columnName"]
     db_column_answer = getattr(policy, db_column_name)
-    q["answers"], graph_list = tmp(q["columnName"], policy_id)
+    q["answers"], graph_list = tmp2(q["columnName"], policy_id, q["question"], q["clarification"])
     if db_column_answer is None or db_column_answer == "":
         q["has_answer"] = False
     else:
