@@ -73,7 +73,7 @@ div.ex1 {
     background-color: white;
     height: 700px;
     width: 900px;
-    overflow-y: hidden;
+    overflow-y: scroll;
     border-style: groove;
 }
 

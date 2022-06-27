@@ -5,7 +5,7 @@ from nltk import word_tokenize
 from nltk.corpus import stopwords
 
 from module1 import stop_words, wv, model_name
-from module1.global_variable import annotation_progress
+from module1.global_variable import annotation_progress, TOP_N
 from module1.models import CoronaNet
 
 
@@ -349,6 +349,7 @@ def cos_two_sentences(X, Y):
     for i in range(len(rvector)):
         c += l1[i] * l2[i]
     cosine = c / float((sum(l1) * sum(l2)) ** 0.5)
+    cosine = float(str(cosine)[0:4])
     return cosine
 
 

@@ -2,7 +2,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from flask import Blueprint, render_template
 
-from module1.global_variable import annotation_progress, q_cache
+from module1.global_variable import annotation_progress, q_cache, TOTAL_TASK_NUM
 from module1.helper import setValue, getValue, preprocess, tmp, get_annotation_progress, tmp2
 # from module1.main import annotation_progress
 from module1.models import CoronaNet
@@ -664,7 +664,7 @@ def view(policy_id):
             cnt = cnt + 1
 
     ending = ''
-    if cnt == 4:
+    if cnt == TOTAL_TASK_NUM:
         ending = 'You have done all the tasks! Thanks!'
 
     return render_template('view.html', policy=policy, policy_id=policy_tmp['policy_id'], ending=ending)
