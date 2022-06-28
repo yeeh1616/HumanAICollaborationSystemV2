@@ -2,7 +2,7 @@ from nltk.tokenize import word_tokenize, sent_tokenize
 from flask import Blueprint, render_template
 
 from module1.global_variable import q_cache, annotation_progress
-from module1.helper import get_annotation_progress
+from module1.helper import get_annotation_progress, cos_two_sentences
 from module1.models import CoronaNet
 from nltk.corpus import stopwords
 from flask import request
@@ -33,7 +33,6 @@ def get_summary_manual(policy_id):
 def get_summary_AI(policy_id):
     policy = CoronaNet.query.filter_by(policy_id=policy_id).first()
 
-    # nltk.download('punkt')
     text = policy.original_text
     stopWords = stopwords.words('english')
     stopWords = set(stopWords)
@@ -51,7 +50,6 @@ def get_summary_AI(policy_id):
             freqTable[word] = 1
 
     sentences = sent_tokenize(text)
-    # sentences = re.split('; |. |\n', text)
     sentenceValue = dict()
 
     for sentence in sentences:
@@ -68,13 +66,12 @@ def get_summary_AI(policy_id):
     average = int(sumValues / len(sentenceValue))
 
     summary = ''
-    highlighted = []
-    for sentence in sentences:
-        if (sentence in sentenceValue) and (sentenceValue[sentence] > (1.2 * average)):
-            summary += " " + sentence
-            highlighted.append([sentence, True])
-        else:
-            highlighted.append([sentence, False])
+
+    if policy_id % 2 == 0:
+        from module1.helper_tmp import get_highlighted_tmp
+        summary, policy.highlighted_text = get_highlighted_tmp(sentences)
+    else:
+        summary, policy.highlighted_text = get_highlighted(sentences, sentenceValue, average, summary)
 
     summary = summary.replace('\r','').replace('\n', ' ')
 
@@ -84,9 +81,19 @@ def get_summary_AI(policy_id):
     else:
         has_summary = True
         policy.description
-    policy.highlighted_text = highlighted
-    # return render_template('summary.html', policy=policy, has_summary=has_summary)
+
     return policy, has_summary
+
+
+def get_highlighted(sentences, sentenceValue, average, summary):
+    highlighted = []
+    for sentence in sentences:
+        if (sentence in sentenceValue) and (sentenceValue[sentence] > (1.2 * average)):
+            summary += " " + sentence
+            highlighted.append([sentence, True])
+        else:
+            highlighted.append([sentence, False])
+    return summary, highlighted
 
 
 @bp_summary.route("/policies/<int:q_type>/save_summary", methods=['POST'])

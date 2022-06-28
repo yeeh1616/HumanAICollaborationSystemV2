@@ -64,8 +64,14 @@ def get_summary(policy_id, question_id=1):
         else:
             if q["taskType"] == 1:
                 policy, summary_list, graph_list = get_selection_AI(policy_id, question_id, q)
+                if policy_id % 2 == 0:
+                    from module1.helper_tmp import set_selection_AI_tmp
+                    set_selection_AI_tmp(q)
             elif q["taskType"] == 2:
                 policy, summary_list, graph_list = get_completation_AI(policy_id, question_id, q)
+                if policy_id % 2 == 0:
+                  from module1.helper_tmp import set_completation_AI_tmp
+                  set_completation_AI_tmp(q)
 
             complete, total = get_annotation_progress(policy_id, q_objs)
             res = render_template('annotation.html',

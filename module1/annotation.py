@@ -3,7 +3,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from flask import Blueprint, render_template
 
 from module1.global_variable import annotation_progress, q_cache, TOTAL_TASK_NUM
-from module1.helper import setValue, getValue, preprocess, tmp, get_annotation_progress, tmp2
+from module1.helper import setValue, getValue, preprocess, tmp, get_annotation_progress, tmp2, cos_two_sentences
 # from module1.main import annotation_progress
 from module1.models import CoronaNet
 from nltk.corpus import stopwords
@@ -141,6 +141,7 @@ def get_completation_manual(policy_id, question_id):
                            pre=question_id - 1,
                            next=question_id + 1)
 
+
 def get_selection_AI(policy_id, question_id, q):
     policy = CoronaNet.query.filter_by(policy_id=policy_id).first()
     db_column_name = q["columnName"]
@@ -165,8 +166,6 @@ def get_selection_AI(policy_id, question_id, q):
         has_answer = True
 
     if has_answer:
-        # a = annotation_progress[policy_id]
-        # a[q["id"]] = True
         for i in range(0, len(q["AI_QA_result"])):
             q["options"][i]["cos"] = q["AI_QA_result"][i]
         for option in q["options"]:
@@ -185,9 +184,7 @@ def get_selection_AI(policy_id, question_id, q):
                 break
         graph_list = get_highlight_sentences_obj(policy_id, q["answers"])
     else:
-        # annotation_progress[policy_id][q["id"]] = False
         for i in range(0, len(q["AI_QA_result"])):
-            # q["options"][i]["cos"] = round(q["AI_QA_result"][i])
             q["options"][i]["cos"] = q["AI_QA_result"][i]
             if q["AI_QA_result"][i] == max_cos:
                 q["options"][i]["checked"] = "True"
@@ -218,10 +215,8 @@ def get_completation_AI(policy_id, question_id, q):
     summary_list = get_policy_obj(policy.original_text)
     return policy, summary_list, graph_list
 
-def get_annotation_AI(policy_id, question_id):
-    # global q_cache
-    # global annotation_progress
 
+def get_annotation_AI(policy_id, question_id):
     if policy_id not in q_cache.keys():
         with open('./module1/static/questions.json', encoding="utf8") as f:
             q_objs = json.load(f)
@@ -261,8 +256,6 @@ def get_annotation_AI(policy_id, question_id):
                     has_answer = True
 
                 if has_answer:
-                    # a = annotation_progress[policy_id]
-                    # a[q["id"]] = True
                     for i in range(0, len(q["AI_QA_result"])):
                         q["options"][i]["cos"] = q["AI_QA_result"][i]
                     for option in q["options"]:
@@ -281,9 +274,7 @@ def get_annotation_AI(policy_id, question_id):
                             break
                     graph_list = get_highlight_sentences_obj(policy_id, q["answers"])
                 else:
-                    # annotation_progress[policy_id][q["id"]] = False
                     for i in range(0, len(q["AI_QA_result"])):
-                        # q["options"][i]["cos"] = round(q["AI_QA_result"][i])
                         q["options"][i]["cos"] = q["AI_QA_result"][i]
                         if q["AI_QA_result"][i] == max_cos:
                             q["options"][i]["checked"] = "True"
@@ -306,7 +297,6 @@ def get_annotation_AI(policy_id, question_id):
             break
 
     summary_list = get_policy_obj(policy.original_text)
-    # graph_list = get_policy_obj(policy.original_text)
     a, b = get_annotation_progress(policy_id, q_objs)
     return render_template('annotation.html',
                            policy=policy,
@@ -487,7 +477,11 @@ def get_highlighting_text_base(policy_id, question_id, option_id):
 
 
 def get_highlighting_text_base_obj(policy_id, question_id, option_id):
-    option_text = get_option_text_by_qid(policy_id, question_id, option_id)
+    option_text, note_text = get_option_text_by_qid(policy_id, question_id, option_id)
+
+    if policy_id % 2 == 0:
+        option_text = "Closure and Regulations of Schools."
+
     return get_highlight_sentences_obj(policy_id, option_text)
 
 
@@ -516,12 +510,8 @@ def get_highlight_sentences_obj(policy_id, option_text):
 
         for s in sentences:
             s.replace("..", ".")
-            sentence_embeddings = model2.encode([option_text[0] + option_text[1], s])
-            score = cosine_similarity(
-                [sentence_embeddings[0]],
-                sentence_embeddings[1:]
-            )
-            g_dic[g_id].append({"sentence_id": s_id, "sentence": s, "score": score[0][0]})
+            score = cos_two_sentences(option_text, s)
+            g_dic[g_id].append({"sentence_id": s_id, "sentence": s, "score": score})
             s_id = s_id + 1
         g_id = g_id + 1
     return g_dic
@@ -654,9 +644,8 @@ def view(policy_id):
 
     policy = {}
     policy['description'] = policy_tmp['description']
-    policy['target_geog_level'] = policy_tmp['target_geog_level']
-    policy['compliance'] = policy_tmp['compliance']
-    policy['date_start'] = policy_tmp['date_start']
+    policy['type'] = policy_tmp['type']
+    policy['country'] = policy_tmp['country']
 
     cnt = 0
     for k in policy:

@@ -36,18 +36,14 @@
                         <label>({{ option['note'] }})</label><br>
                         {% endif %}
 
-                        {% if option['type'] == 2 %}
-                        {% if option['cos'] >= 0.8 %}
-                        <span class="label high">{{ (option['cos']|string)[:4] }} [AI Recommendation]</span><br>
-                        <br>
-                        {% elif option['cos'] < 0.8 and option['cos'] >= 0.6 %}
-                        <span class="label middle">{{ (option['cos']|string)[:4] }} [AI Recommendation]</span>
-                        <br>
-                        <br>
-                        {% elif option['cos'] < 0.6 %}
-                        <span class="label low">{{ (option['cos']|string)[:4] }} [AI Recommendation]</span><br>
-                        <br>
-                        {% endif %}
+                        {% if option['checked'] == "True" %}
+                            {% if option['cos'] > 0.7 %}
+                                <span class="label high">High Confidence</span><br>
+                                <br>
+                            {% else %}
+                                <span class="label low">Low Confidence</span><br>
+                                <br>
+                            {% endif %}
                         {% endif %}
 
                         {% if option['isTextEntry'] %}
@@ -91,19 +87,12 @@
                         <p>AI Recommendation:</p>
                         {% for a in q["answers"] %}
                             <div>
-                                {% if loop.index == 1 %}
-                                    <input type="radio" name="type2_answer" value="{{ a[0] }}"
-                                           onclick="type2_highlighting('{{ q['id'] }}', '{{ a[0] }}')"/>
-                                {% else %}
-                                     <input type="radio" name="type2_answer" value="{{ a[0] }}"
-                                           onclick="type2_highlighting('{{ q['id'] }}', '{{ a[0] }}')" checked/>
-                                {% endif %}<label>{{ a[0] }}</label>
-                                    {% if a[1] >= 0.8 %}
-                                    <label class="label high">{{ a[1] }}</label>
-                                    {% elif a[1] < 0.8 and a[1] >= 0.6 %}
-                                    <label class="label middle">{{ a[1] }}</label>
-                                    {% elif a[1] < 0.6 %}
-                                    <label class="label low">{{ a[1] }}</label>
+                                <input type="radio" name="type2_answer" value="{{ a[0] }}"
+                                           onclick="type2_highlighting('{{ q['id'] }}', '{{ a[0] }}')"/><label>{{ a[0] }}</label>
+                                    {% if a[1] >= 0.6 %}
+                                    <label class="label high">High Confidence</label>
+                                    {% else %}
+                                    <label class="label low">Low Confidence</label>
                                     {% endif %}
                             </div>
                         {% endfor %}
@@ -170,24 +159,9 @@
             {% for key in graph_list %}
             <div>
                 {% for s in graph_list[key] %}
-                {% if s['score'] >= 0.9 %}
+                {% if s['score'] >= 0.2 %}
                 <span id="g{{ key }}_s{{ s['sentence_id'] }}"
                       style="background-color:#37ff00;">{{ s['sentence'] }}</span>
-                {% elif s['score'] >= 0.8 and s['score'] < 0.9 %}
-                <span id="g{{ key }}_s{{ s['sentence_id'] }}"
-                      style="background-color:#a0ff6e;">{{ s['sentence'] }}</span>
-                {% elif s['score'] >= 0.7 and s['score'] < 0.8 %}
-                <span id="g{{ key }}_s{{ s['sentence_id'] }}"
-                      style="background-color:#ffee04;">{{ s['sentence'] }}</span>
-                {% elif s['score'] >= 0.6 and s['score'] < 0.7 %}
-                <span id="g{{ key }}_s{{ s['sentence_id'] }}"
-                      style="background-color:#fff833;">{{ s['sentence'] }}</span>
-                {% elif s['score'] >= 0.5 and s['score'] < 0.6 %}
-                <span id="g{{ key }}_s{{ s['sentence_id'] }}"
-                      style="background-color:#fcf68f;">{{ s['sentence'] }}</span>
-                {% elif s['score'] >= 0.4 and s['score'] < 0.5 %}
-                <span id="g{{ key }}_s{{ s['sentence_id'] }}"
-                      style="background-color:#fdfcc4;">{{ s['sentence'] }}</span>
                 {% else %}
                 <span id="g{{ key }}_s{{ s['sentence_id'] }}">{{ s['sentence'] }}</span>
                 {% endif %}

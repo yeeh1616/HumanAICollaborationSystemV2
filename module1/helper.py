@@ -426,11 +426,11 @@ def tmp2(column_name, policy_id, question, clarification):
                 continue
             # topN_tmp = w2v_sentence(answer, clarification)
             cos = cos_two_sentences(answer, clarification)
-            topN.append((answer, cos))
+            topN.append([answer, cos])
             g_dic[g_id].append({"sentence_id": s_id, "sentence": s, "score": 0})
             s_id = s_id + 1
         g_id = g_id + 1
-    topN = list(set(topN))
+    # topN = list(set())
     topN.sort(reverse=True, key=lambda y: y[1])
     topN = topN[:TOP_N]
 

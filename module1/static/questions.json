@@ -2,7 +2,7 @@
     {
         "id": 1,
         "columnName": "description",
-        "question": "Please fill in a short description of the policy on the right side. It should include when and who did what policy. For example: On Apr. 18, 2020, the United Kingdom government has warned against unapproved antibody tests for COVID-19.",
+        "question": "Please fill in a short description of the policy on the right side. It should include when and who did what policy.",
         "answers": "",
         "has_answer": false,
         "clarification": "",
@@ -17,7 +17,7 @@
         "answers": "",
         "has_answer": false,
         "AI_QA_result": "",
-        "clarification": "This variable captures the type of government policy. Note that in the survey, it is possible to access the definitions and examples for each policy type via pop-up buttons in the survey.",
+        "clarification": "This variable captures the type of government policy.",
         "isPrimaryKey": "False",
         "taskType": 1,
         "options":
@@ -45,11 +45,11 @@
     },
     {
         "id": 3,
-        "columnName": "date_start",
-        "question": "When does the policy take effect?",
+        "columnName": "country",
+        "question": "Where was this policy announced?",
         "answers": "",
         "has_answer": false,
-        "clarification": "This variable documents the date that the government policy takes effect. If\nthere is no available information about this, then the date announced is used.",
+        "clarification": "This variable documents the country in which a particular government policy is initiated. This variable always takes a value irrespective of what level of government the policy was made at (init country level).",
         "isPrimaryKey": "False",
         "taskType": 2,
         "selected": true
