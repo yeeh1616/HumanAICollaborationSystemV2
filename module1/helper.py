@@ -468,8 +468,3 @@ def get_annotation_progress(pid, q_objs):
             a = a + 1
 
     return a, b
-
-if __name__ == '__main__':
-    w = 'date'
-    s = 'February 22 – Full time return for pre-school children in early learning and childcare settings and children in P1-3.'
-    w2v_sentence(w, s)
