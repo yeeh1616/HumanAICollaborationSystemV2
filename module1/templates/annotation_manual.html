@@ -22,12 +22,12 @@
                         <div id="{{ q['id'] }}_op" style="border-style: dashed;">
                             {% for option in q["options"] %}
                             {% if option['checked'] == "True" %}
-                            <input id="{{ option['id'] }}" type="radio" name="{{ q['id'] }}_answer"
+                            <input id="{{ option['id'] }}" type="radio" class="big" name="{{ q['id'] }}_answer"
                                    value="{{ option['option'] }}"
                                    onclick="text_change('{{ q['id'] }}', '{{ option['isTextEntry'] }}')"
                                    checked>
                             {% else %}
-                            <input id="{{ option['id'] }}" type="radio" name="{{ q['id'] }}_answer"
+                            <input id="{{ option['id'] }}" type="radio" class="big" name="{{ q['id'] }}_answer"
                                    value="{{ option['option'] }}"
                                    onclick="text_change('{{ q['id'] }}', '{{ option['isTextEntry'] }}')">
                             {% endif %}
@@ -36,6 +36,7 @@
                             {% if option['note'] != "" %}
                             <label>({{ option['note'] }})</label><br>
                             {% endif %}
+                            <br><br>
 
                             {% if option['isTextEntry'] %}
                             {% if option['checked'] == "True" %}
